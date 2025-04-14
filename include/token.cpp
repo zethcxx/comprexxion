@@ -8,7 +8,8 @@ std::string_view Token::get_typestr( std::optional<Type> token_type ) const {
         case IDENTIFIER     : return "IDENTIFIER"     ;
         case STRING         : return "STRING"         ;
         case UNCLOSED_STRING: return "STRING_INVALD"  ;
-        case NUMERIC        : return "NUMERIC"        ;
+        case NUMBER         : return "NUMBER"         ;
+        case INVALID_NUMBER : return "INVALID_NUMBER" ;
         case NEWLINE        : return "NEWLINE"        ;
         case ASSIGN         : return "ASSIGN"         ;
         case SYMBOL         : return "SYMBOL"         ;

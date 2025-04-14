@@ -12,7 +12,8 @@ class Token {
             IDENTIFIER     ,
             STRING         ,
             UNCLOSED_STRING,
-            NUMERIC        ,
+            NUMBER         ,
+            INVALID_NUMBER ,
             NEWLINE        ,
             ASSIGN         ,
             SYMBOL         ,
@@ -59,9 +60,9 @@ class Token {
         Token();
 
     private:
-        /* ----- MEMBERS ----- */
-        const Token::Type type  ;
-        const std::size_t line  ;
-        const std::size_t column;
-        const std::string value ;
+        /* -- MEMBERS -- */
+        Token::Type type  ;
+        std::size_t line  ;
+        std::size_t column;
+        std::string value ;
 };

@@ -93,7 +93,18 @@ Token Lexer::parse_number() {
         advance();
     }
 
-    return make_token(Token::Type::NUMERIC, number);
+    if (is_identifier_char(curr_char)) {
+        while (is_identifier_char(curr_char) || is_number(curr_char)) {
+            number += curr_char;
+            advance();
+
+            if (eof_flag) break;
+        }
+
+        return make_token(Token::Type::INVALID_NUMBER, number);
+    }
+
+    return make_token(Token::Type::NUMBER, number);
 }
 
 
