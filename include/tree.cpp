@@ -36,7 +36,7 @@ bool DirTree::go_to_child( const std::string& name ) {
 }
 
 
-void DirTree::print_tree() {
+void DirTree::print_tree( bool indent_before, size_t indent_size ) {
     struct DirFrame {
         decltype( Node::childrens )::iterator begin;
         decltype( Node::childrens )::iterator end  ;
@@ -51,6 +51,9 @@ void DirTree::print_tree() {
         .level = 1
     });
 
+    if ( indent_before )
+        std::print("{:{}}", " ", indent_size);
+
     std::println("\x1b[34m{}\x1b[0m", root->name);
     bool is_last_element = false;
 
@@ -64,13 +67,17 @@ void DirTree::print_tree() {
 
         const auto &node = it->second;
 
+        if ( indent_before )
+            std::print("{:{}}", " ", indent_size);
+
         it++;
 
         if ( level == 1 && it == it_end )
             is_last_element = true;
 
         if (level != 1 ) {
-            std::print("\x1b[30m{:<{}}\x1b[0m", is_last_element ? " " : "│", (level-1)*3);
+            for (size_t i = 1 ; i < level; i++)
+                std::print("\x1b[30m{}\x1b[0m", is_last_element ? "    " : "│   ");
         }
 
         std::print("\x1b[30m{}\x1b[0m", ( it == it_end ? "└── " : "├── " ));
@@ -99,6 +106,6 @@ DirTree::Node::Node ( const std::string &_name, bool _is_directory, Node *_paren
 
 
 DirTree::DirTree ()
-  : root      { std::make_unique<Node>("/", true) },
+  : root      { std::make_unique<Node>(".", true) },
     curr_node { root.get()                        }
 {}

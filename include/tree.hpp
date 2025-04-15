@@ -27,7 +27,7 @@ class DirTree {
         DirTree();
         
         void go_to_parent( void );
-        void print_tree  ( void );
+        void print_tree  ( bool indent_before = false, size_t indent_size = 4 );
 
         [[nodiscard]]
         bool has_parent( void ) const {
