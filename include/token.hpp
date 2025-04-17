@@ -12,7 +12,7 @@ class Token {
             IDENTIFIER     ,
             STRING         ,
             UNCLOSED_STRING,
-            NUMBER         ,
+            VALID_NUMBER         ,
             INVALID_NUMBER ,
             NEWLINE        ,
             ASSIGN         ,

@@ -6,49 +6,76 @@
 #include <vector>
 
 class Lexer {
-    private:
-        std::ifstream file;
+public:
+    // --- Constructors:
+    explicit Lexer(const std::filesystem::path &_filepath);
 
-        std::size_t line       = 1;
-        std::size_t column     = 0;
-        std::size_t buffer_pos = 0;
-        std::size_t buffer_len = 0;
 
-        Token curr_token;
+    // --- Main Functions:
+    Token get_next_token();
+    Token get_curr_token();
 
-        char curr_char;
-        bool eof_flag ;
 
-        static constexpr std::size_t BUFFER_SIZE = 4096;
+    // --- Helper Functions:
+    static bool is_valid_char ( const char &c );
+    static bool is_digit      ( const char &c );
+    static bool is_indent_char( const char &c );
 
-        std::vector<char> buffer;
 
-        bool fill_buffer  ( void );
-        void parse_comment( void );
-        void advance      ( void );
-        void backward     ( void );
+    // --- Error Flag:
+    bool has_errors = false;
 
-        Token parse_identifier( void );
-        Token parse_indent    ( void );
-        Token parse_number    ( void );
-        Token parse_string    ( void );
-        Token parse_symbol    ( void );
 
-        Token make_token( Token::Type type, const std::string &value ) {
-            return { type, line, column - value.length(), value };
-        }
+    // --- Input File Path:
+    std::filesystem::path filepath;
 
-    public:
-        bool has_errors = false;
+private:
 
-        explicit Lexer (
-            const std::filesystem::path &_filepath
-        );
+    // --- File Stream:
+    std::ifstream file;
 
-        static bool is_identifier_char (const char &c);
-        static bool is_number          (const char &c);
-        static bool is_indent_char     (const char &c);
 
-        Token get_next_token( void );
-        Token get_curr_token( void );
+    // -- Lexer State:
+    std::size_t line   = 1;
+    std::size_t column = 0;
+    // +
+    Token curr_token;
+    char  curr_char ;
+    bool  eof_flag  ;
+
+
+    // --- Buffer State:
+    static constexpr std::size_t BUFFER_SIZE = 4096;
+    std::vector<char> buffer;
+    // +
+    std::size_t    buffer_pos = 0;
+    std::size_t    buffer_len = 0;
+    std::streampos file_pos   = 0;
+
+
+    // --- Buffer Handling:
+    bool fill_buffer     ( void );
+    bool load_prev_buffer( void );
+
+
+    // --- Navigation:
+    void advance ( void );
+    void backward( void );
+
+
+    // --- Token Parsers:
+    Token parse_identifier( void );
+    Token parse_indent    ( void );
+    Token parse_number    ( void );
+    Token parse_string    ( void );
+    Token parse_symbol    ( void );
+    // +
+    void parse_comment( void );
+
+
+    // --- Creation Token:
+    Token make_token(
+        const Token::Type  type,
+        const std::string &value
+    ) const;
 };

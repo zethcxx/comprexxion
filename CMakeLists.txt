@@ -1,7 +1,7 @@
 cmake_minimum_required ( VERSION 3.20 )
 
 project ( COMPREXXION
-    VERSION     0.06
+    VERSION     0.07
     DESCRIPTION "Copia ciertos elementos de un proyecto y luego lo comprime."
     LANGUAGES   CXX
 )

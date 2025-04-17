@@ -2,12 +2,44 @@
 #include <cstring>
 #include <print>
 
+Token Lexer::make_token(
+    const Token::Type  type,
+    const std::string &value
+) const {
+    return { type, line, column - value.length(), value };
+}
+
+
+bool Lexer::load_prev_buffer() {
+    using std::streamoff, std::streampos;
+
+    if ( not file or eof_flag )
+        return false;
+
+    streamoff back    = static_cast<streamoff>(BUFFER_SIZE * 2);
+    streampos new_pos = file_pos - back;
+
+    if (new_pos < 0)
+        return false;
+
+    file.seekg( new_pos );
+
+    if ( not file )
+        return false;
+
+    return fill_buffer();
+}
+
+
 bool Lexer::fill_buffer() {
-    if ( not file ) return false;
+    if ( not file || eof_flag )
+        return false;
+
+    file_pos = file.tellg();
 
     file.read( buffer.data(), BUFFER_SIZE );
 
-    buffer_len = static_cast<std::size_t>(file.gcount());
+    buffer_len = static_cast<std::size_t>( file.gcount());
     buffer_pos = 0;
 
     return buffer_len > 0;
@@ -22,7 +54,7 @@ void Lexer::advance() {
         }
     }
 
-    curr_char = buffer.at(buffer_pos);
+    curr_char = buffer.at( buffer_pos );
 
     buffer_pos++;
     column++;
@@ -30,30 +62,29 @@ void Lexer::advance() {
 
 
 void Lexer::backward() {
-    if ( buffer_pos > 0 ) {
-        --buffer_pos;
-        --column;
+    if ( buffer_pos <= 0) return;
 
-        curr_char = buffer.at(buffer_pos);
-    }
+    --buffer_pos;
+    --column    ;
+
+    curr_char = buffer.at( buffer_pos );
 }
 
 
 Token Lexer::get_next_token() {
     using TOKEN = Token::Type;
 
-    while (not eof_flag) {
-        if (column == 1 && is_indent_char(curr_char)) {
+    while ( not eof_flag ) {
+        if ( column == 1 && is_indent_char( curr_char ))
             return parse_indent();
-        }
 
-        if (std::isspace(curr_char)) {
-            if (curr_char == '\n') {
+        if ( std::isspace( curr_char )) {
+            if ( curr_char == '\n' ) {
                 line++;
                 advance();
                 column = 1;
 
-                return make_token(TOKEN::NEWLINE, "\\n");
+                return make_token( TOKEN::NEWLINE, "\\n" );
             }
 
             advance();
@@ -61,131 +92,135 @@ Token Lexer::get_next_token() {
         }
 
 
-        if (is_identifier_char(curr_char)) {
+        if ( is_valid_char( curr_char ))
             return parse_identifier();
-        }
 
-        if (is_number(curr_char)) {
+        else if ( is_digit( curr_char ))
             return parse_number();
-        }
 
-        if (curr_char == '"' || curr_char == '\'') {
+        else if ( curr_char == '"' || curr_char == '\'' )
             return parse_string();
-        }
 
-        if (curr_char == '#') {
+        else if ( curr_char == '#' )
             parse_comment();
-            continue;
-        }
 
-        return parse_symbol();
+        else
+            return parse_symbol();
     }
 
-    return make_token(TOKEN::END_OF_FILE, "");
+    return make_token( TOKEN::END_OF_FILE, "" );
 }
 
 
 Token Lexer::parse_number() {
-    std::string number;
+    using enum Token::Type;
+    std::string value;
 
-    while (is_number(curr_char)) {
-        number += curr_char;
+    while ( is_digit( curr_char )) {
+        value += curr_char;
         advance();
     }
 
-    if (is_identifier_char(curr_char)) {
-        while (is_identifier_char(curr_char) || is_number(curr_char)) {
-            number += curr_char;
+    if ( is_valid_char( curr_char )) {
+        while (
+            is_valid_char( curr_char ) || is_digit( curr_char )
+        ) {
+            value += curr_char;
             advance();
 
-            if (eof_flag) break;
+            if ( eof_flag ) break;
         }
 
-        return make_token(Token::Type::INVALID_NUMBER, number);
+        return make_token( INVALID_NUMBER, value );
     }
 
-    return make_token(Token::Type::NUMBER, number);
+    return make_token( VALID_NUMBER, value );
 }
 
 
 Token Lexer::parse_string() {
-    char quote_type = curr_char;
-    std::string value, bad_value;
-    bad_value += quote_type;
+    using TOKEN = Token::Type;
+
+    const char quote_type = curr_char;
+    std::string value;
     advance();
 
-    while (not eof_flag) {
-        if (curr_char == '\n') break;
+    while ( not eof_flag && curr_char != quote_type ) {
+        if ( curr_char == '\n' ) break;
 
-        if (curr_char == '\\') {
+        if ( curr_char == '\\' ) {
+            value += curr_char;
+
             advance();
-            if (eof_flag) break;
-            value += '\\';
+            if ( eof_flag )
+                break;
+
             value += curr_char;
-        } else if (curr_char == quote_type) {
-            break;
-        } else {
-            value += curr_char;
+            continue;
         }
+
+        value += curr_char;
 
         advance();
     }
 
-    bad_value += value;
-
-    if (eof_flag || curr_char != quote_type) {
-        return make_token(Token::Type::UNCLOSED_STRING, bad_value);
-    }
+    if ( eof_flag || curr_char != quote_type )
+        return make_token( TOKEN::UNCLOSED_STRING, "\"" + value );
 
     advance();
-    return make_token(Token::Type::STRING, value);
+    return make_token( TOKEN::STRING, value );
 }
 
 
 Token Lexer::parse_symbol() {
-    using TOKEN = Token::Type;
-    std::string symbol(1, curr_char);
+    using enum Token::Type;
+    std::string symbol{ 1, curr_char };
 
-    switch (curr_char) {
+    switch ( curr_char ) {
         case ':':
             advance();
-            return make_token(TOKEN::ASSIGN, symbol);
+            return make_token( ASSIGN, symbol );
 
         case '+':
             advance();
-            return make_token(TOKEN::PATH_INDICATOR, symbol);
+            return make_token( PATH_INDICATOR, symbol );
 
         default:
             advance();
-            return make_token(TOKEN::SYMBOL, symbol);
+            return make_token( SYMBOL, symbol );
     }
 }
 
 
 Token Lexer::parse_indent() {
-    std::string indent_string;
-    bool exist_space = false, exist_tab = false;
+    using enum Token::Type;
 
-    while (is_indent_char(curr_char)) {
-        if (curr_char == ' ')  exist_space = true;
-        if (curr_char == '\t') exist_tab   = true;
+    std::string indent_value;
 
-        indent_string += curr_char;
+    bool has_spaces = false;
+    bool has_tabs   = false;
+
+    while ( is_indent_char( curr_char )) {
+        if ( curr_char == ' '  ) has_spaces = true;
+        if ( curr_char == '\t' ) has_tabs   = true;
+
+        indent_value += curr_char;
         advance();
     }
 
-    if (exist_space && exist_tab)
-        return make_token(Token::Type::INDENT_MIXTED, indent_string);
+    if ( has_spaces && has_tabs )
+        return make_token( INDENT_MIXTED, indent_value );
 
-    if (exist_tab)
-        return make_token(Token::Type::INDENT_TAB, indent_string);
+    else if ( has_spaces )
+        return make_token( INDENT_SPACE , indent_value );
 
-    return make_token(Token::Type::INDENT_SPACE, indent_string);
+    else
+        return make_token( INDENT_TAB   , indent_value );
 }
 
 
 void Lexer::parse_comment() {
-    while (curr_char != '\n' && not eof_flag)
+    while ( curr_char != '\n' && not eof_flag )
         advance();
 }
 
@@ -193,24 +228,24 @@ void Lexer::parse_comment() {
 Token Lexer::parse_identifier() {
     std::string identifier;
 
-    while (is_identifier_char(curr_char)) {
+    while (is_valid_char(curr_char)) {
         identifier += curr_char;
         advance();
 
         if ( eof_flag ) break;
     }
 
-    return make_token(Token::Type::IDENTIFIER, identifier);
+    return make_token( Token::Type::IDENTIFIER, identifier );
 }
 
 
-bool Lexer::is_identifier_char ( const char &c ) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z' ) || (c == '_');
+bool Lexer::is_valid_char ( const char &c ) {
+    return std::isalpha( static_cast<unsigned char>( c )) || c == '_';
 }
 
 
-bool Lexer::is_number ( const char &c ) {
-    return (c >= '0' && c <= '9' );
+bool Lexer::is_digit ( const char &c ) {
+    return std::isdigit( static_cast<unsigned char>( c ));
 }
 
 
@@ -219,17 +254,21 @@ bool Lexer::is_indent_char ( const char &c ) {
 }
 
 
-Lexer::Lexer (
-    const std::filesystem::path &_filepath
-)
-  : file   { _filepath, std::ios::in | std::ios::binary }
+Lexer::Lexer ( const std::filesystem::path &_filepath )
+  : filepath { _filepath },
+    file     { _filepath, std::ios::in | std::ios::binary }
 {
-    if ( not file.is_open()) {
-        std::println(stderr, "File \"{}\"", std::filesystem::absolute(_filepath).string());
-        std::println(stderr, "Error: {}", std::strerror( errno ));
-        has_errors = true;
+    if ( file.is_open() ) {
+        buffer.resize( BUFFER_SIZE, 0 );
+        advance();
+        return;
     }
 
-    buffer.resize(BUFFER_SIZE, 0);
-    advance();
+    has_errors = true;
+
+    std::println( stderr, "File \"{}\"",
+            std::filesystem::absolute( _filepath ).string()
+        );
+
+    std::println( stderr, "Error: {}", std::strerror( errno ));
 }
