@@ -2,13 +2,13 @@
 #   MAIN CONFIG
 # ---------------
 project_name  : "testing"
-project_root  : "Hola"
+project_root  : "./"
 compress_type : "gzip"
-compress_level: 6
+compress_level: 4
 
 # ----------------
 #  FILES SELECTED
 # ----------------
-include:
-    +d "src/"
-        +f "main.cpp"
+#structure:
+#    +d "src/"
+#        +f "main.cpp"
