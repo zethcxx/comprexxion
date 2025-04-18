@@ -5,38 +5,55 @@
 #include <unordered_map>
 
 class DirTree {
-    private:
+private:
 
-        struct Node {
-            std::string name;
-            bool is_directory;
-            Node *parent;
+    struct Node {
+        // --- Basic Properties:
+        std::string name;
+        bool is_directory;
+        Node *parent;
 
-            std::unordered_map< std::string, std::unique_ptr<Node> > childrens;
+        // --- Children Management:
+        std::unordered_map<
+            std::string /* name of child */,
+            std::unique_ptr<Node>> children {};
 
-            Node (
-                const std::string &_name, bool _is_directory, Node *_parent = nullptr
-            );
+        // --- Constructor:
+        Node (
+            const std::string &_name,
+            const bool _is_directory,
+            Node *_parent = nullptr
+        );
+    };
 
-        };
 
-        std::unique_ptr<Node> root;
-        Node* curr_node;
+    // --- Root Node Of Tree:
+    std::unique_ptr<Node> root;
 
-    public:
-        DirTree();
-        
-        void go_to_parent( void );
-        void print_tree  ( bool indent_before = false, size_t indent_size = 4 );
 
-        [[nodiscard]]
-        bool has_parent( void ) const {
-            return curr_node->parent != nullptr;
-        }
+    // --- Current Node Of Tree:
+    Node* curr_node;
 
-        [[nodiscard]]
-        bool go_to_child ( const std::string& name );
 
-        [[nodiscard]]
-        bool add_child( const std::string& name, bool is_directory = true );
+public:
+
+    // --- Constructor
+    DirTree();
+
+
+    // --- Tree Printing
+    void print_tree  ( size_t initial_indent = 0);
+
+
+    // --- Current Node Methods
+    [[nodiscard]]
+    bool has_parent( void ) const;
+    // +
+    bool go_to_child ( const std::string& name );
+    // +
+    bool go_to_parent( void );
+    // +
+    [[nodiscard]]
+    bool add_child( const std::string& name,
+                    const bool is_directory = true );
 };

@@ -1,14 +1,23 @@
 #include "tree.hpp"
 #include <memory>
 #include <print>
-#include <stack>
+#include <vector>
+#include <utility>
 
-bool DirTree::add_child( const std::string &name, bool is_directory ) {
-    if ( curr_node->childrens.contains(name) ) {
+bool DirTree::has_parent() const {
+    return curr_node->parent != nullptr;
+
+}
+
+bool DirTree::add_child( const std::string &name,
+                         const bool is_directory
+) {
+    const auto &children = curr_node->children;
+
+    if ( not curr_node->is_directory or children.contains(name) )
         return false;
-    }
 
-    curr_node->childrens.insert({
+    curr_node->children.insert({
         name,
         std::make_unique<Node>(name, is_directory, curr_node)
     });
@@ -17,18 +26,20 @@ bool DirTree::add_child( const std::string &name, bool is_directory ) {
 }
 
 
-void DirTree::go_to_parent() {
-    if ( not curr_node->parent )
-        return;
+bool DirTree::go_to_parent() {
+    // --- if curr_node is root
+    if ( not has_parent() )
+        return false;
 
     curr_node = curr_node->parent;
+    return true;
 }
 
 
 bool DirTree::go_to_child( const std::string& name ) {
-    auto node = curr_node->childrens.find(name);
+    const auto &node = curr_node->children.find(name);
 
-    if ( node == curr_node->childrens.end() )
+    if ( node == curr_node->children.end() )
         return false;
 
     curr_node = node->second.get();
@@ -36,69 +47,80 @@ bool DirTree::go_to_child( const std::string& name ) {
 }
 
 
-void DirTree::print_tree( bool indent_before, size_t indent_size ) {
+void DirTree::print_tree( size_t initial_indent ) {
+    static std::string indent_str = std::string(initial_indent, ' ');
+
+    using std::print, std::println;
+
     struct DirFrame {
-        decltype( Node::childrens )::iterator begin;
-        decltype( Node::childrens )::iterator end  ;
-        size_t level;
+        decltype ( Node::children )::iterator begin;
+        decltype ( Node::children )::iterator end  ;
+        bool separator;
     };
 
-    std::stack< DirFrame > stack;
+    std::vector<DirFrame> stack;
 
-    stack.push({
-        .begin = root->childrens.begin(),
-        .end   = root->childrens.end  (),
-        .level = 1
+    stack.push_back({
+        .begin = root->children.begin(),
+        .end   = root->children.end  (),
+        .separator = true,
     });
 
-    if ( indent_before )
-        std::print("{:{}}", " ", indent_size);
+    print("{}", indent_str);
+    println("root(\x1b[34m{}\x1b[0m)", root->name);
 
-    std::println("\x1b[34m{}\x1b[0m", root->name);
-    bool is_last_element = false;
-
-    while ( not stack.empty()) {
-        auto &[it, it_end, level] = stack.top();
+    while ( not stack.empty() ) {
+        auto &[it, it_end, separator] = stack.back();
 
         if ( it == it_end ) {
-            stack.pop();
+            stack.pop_back();
             continue;
         }
 
-        const auto &node = it->second;
+        const auto &name    = it -> first  ;
+        const auto &node    = it -> second ;
+        const auto &next_it = std::next(it);
 
-        if ( indent_before )
-            std::print("{:{}}", " ", indent_size);
+        print("{}", indent_str);
+
+        for ( size_t i = 0; i < stack.size()-1; i++ ) {
+            if ( stack.at( i ).separator )
+                print("│  ");
+            else
+                print("   ");
+        }
+
+        if ( next_it == it_end ) {
+            separator = false;
+            print("└── ");
+        } else {
+            print("├── ");
+        }
+
+        if ( node->is_directory )
+            println("\x1b[34m{}\x1b[0m", name);
+        else
+            println("{}", name);
 
         it++;
 
-        if ( level == 1 && it == it_end )
-            is_last_element = true;
+        if ( not node->is_directory and node->children.empty())
+            continue;
 
-        if (level != 1 ) {
-            for (size_t i = 1 ; i < level; i++)
-                std::print("\x1b[30m{}\x1b[0m", is_last_element ? "    " : "│   ");
-        }
-
-        std::print("\x1b[30m{}\x1b[0m", ( it == it_end ? "└── " : "├── " ));
-
-
-        if ( node->is_directory )
-            std::print("\x1b[34m");
-
-        std::println("{}\x1b[0m", node->name);
-
-        if ( node->is_directory and not node->childrens.empty()) {
-            stack.push({
-                .begin = node->childrens.begin(),
-                .end   = node->childrens.end  (),
-                .level = level + 1
-            });
-        }
+        stack.push_back({
+            .begin = node->children.begin(),
+            .end   = node->children.end  (),
+            .separator = true
+        });
     }
 }
 
-DirTree::Node::Node ( const std::string &_name, bool _is_directory, Node *_parent )
+
+DirTree::Node::Node (
+    const std::string &_name,
+    const bool _is_directory,
+    Node *_parent
+)
   : name         { _name         },
     is_directory { _is_directory },
     parent       { _parent       }
@@ -106,6 +128,6 @@ DirTree::Node::Node ( const std::string &_name, bool _is_directory, Node *_paren
 
 
 DirTree::DirTree ()
-  : root      { std::make_unique<Node>(".", true) },
-    curr_node { root.get()                        }
+  : root      { std::make_unique<Node>("./", true) },
+    curr_node { root.get()                         }
 {}
