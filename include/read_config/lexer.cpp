@@ -209,7 +209,7 @@ Token Lexer::parse_indent() {
     }
 
     if ( has_spaces && has_tabs )
-        return make_token( INDENT_MIXTED, indent_value );
+        return make_token( INDENT_MIXED, indent_value );
 
     else if ( has_spaces )
         return make_token( INDENT_SPACE , indent_value );

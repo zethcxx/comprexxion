@@ -6,7 +6,7 @@
 
 #include <memory>
 #include <string_view>
-#include <unordered_map>
+#include <map>
 #include <utility>
 #include <variant>
 #include <print>
@@ -36,7 +36,7 @@ public:
             std::shared_ptr<DirTree>
         >;
     // +
-    using Identifiers_map  = std::unordered_map<
+    using Identifiers_map  = std::map<
             std::string_view,
             std::pair<
                 TOKEN,
@@ -69,7 +69,7 @@ public:
         {
             "compress_level", {
                 TOKEN::VALID_NUMBER,
-                std::int64_t( 4 )
+                std::int32_t( 4 )
             }
         },
         {
@@ -96,7 +96,7 @@ public:
     // +
     bool is_token( const Token::Type &expected_token ) const;
     // +
-    bool is_valid_int32( std::string_view number_str ) const;
+    std::optional<std::int32_t> parse_int32( std::string_view str ) const;
     // +
     template<typename... Args>
     void report(
@@ -108,8 +108,8 @@ public:
 
         std::println( stderr, "File \"{}:{}:{}\"",
             fs::absolute( lexer.filepath ).string(),
-            token.get_line      (),
-            token.get_columm    ()
+            token.get_line    (),
+            token.get_column  ()
         );
 
         const auto formatted = std::format(

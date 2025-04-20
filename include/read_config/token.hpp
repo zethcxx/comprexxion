@@ -22,7 +22,7 @@ public:
         PATHS_BLOCK    ,
         INDENT_TAB     ,
         INDENT_SPACE   ,
-        INDENT_MIXTED  ,
+        INDENT_MIXED   ,
         END_OF_FILE
     };
 
@@ -35,7 +35,7 @@ public:
     std::size_t get_line   () const { return this->line  ; }
     // +
     [[nodiscard]]
-    std::size_t get_columm () const { return this->column; }
+    std::size_t get_column () const { return this->column; }
     // +
     [[nodiscard]]
     Token::Type get_type   () const { return this->type  ; }

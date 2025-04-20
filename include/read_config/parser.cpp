@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <cstdint>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 
 bool Parser::is_token( const Token::Type &expected_token ) const {
@@ -33,16 +32,14 @@ std::string Parser::get_current_dir_path( void ) {
 }
 
 
-bool Parser::is_valid_int32( std::string_view number_str ) const {
+std::optional<std::int32_t> Parser::parse_int32( std::string_view str ) const {
     std::int32_t result;
+    const auto [ptr, ec] = std::from_chars( str.begin(), str.end(), result );
 
-    const auto [ptr, ec] = std::from_chars(
-        number_str.begin(),
-        number_str.end(),
-        result
-    );
+    if ( ec == std::errc() && ptr == str.end() )
+        return result;
 
-    return ( ec == std::errc()) && ( ptr == number_str.end() );
+    return std::nullopt;
 }
 
 
@@ -66,9 +63,12 @@ void Parser::parsing() {
     if ( is_token( BEGIN_FILE )) advance();
 
     while ( not is_token( END_OF_FILE )) {
+
         skip_empty_lines();
 
+        /* only empty lines */
         if ( is_token( END_OF_FILE )) break;
+
 
         if ( not is_token( IDENTIFIER )) {
             report(
@@ -78,7 +78,9 @@ void Parser::parsing() {
             break;
         }
 
+
         const std::string identifier = token.get_value();
+
 
         if ( not identifiers_on_top.contains( identifier) ) {
             report( "Identifier Unknow '{}'", identifier);
@@ -103,7 +105,8 @@ void Parser::parsing() {
         } else advance();
 
 
-        const std::string value = token.get_value();
+        const std::string value_str = token.get_value();
+        Identifier_value value = token.get_value();
 
         if ( not is_token( allowed_type )) {
             auto type_str = std::string( token.get_typestr( allowed_type ));
@@ -117,7 +120,7 @@ void Parser::parsing() {
             report( "Expected valid {} for '{}' but got '{}'.",
                 type_str,
                 identifier,
-                value
+                value_str
             );
 
         } else if ( is_token( STRING ) and token.get_value().empty() ) {
@@ -127,14 +130,24 @@ void Parser::parsing() {
             );
             break;
 
-        } else if ( is_token( VALID_NUMBER ) and not is_valid_int32( value )) {
-            report( "Invalid int32 value: '{}'.", value );
-            break;
+        } else if ( is_token( VALID_NUMBER ) ) {
+            auto valid_int32 = parse_int32( value_str );
+
+            if ( not valid_int32 ) {
+                report( "Invalid int32 value: '{}'.", value_str );
+                break;
+
+            } else value = valid_int32.value();
+
         }
 
+
         if ( not is_token( PATHS_BLOCK )) {
-            advance();
+            advance(); // skip newline
+            // TODO: Implement validation for the block that will contain
+            // paths to include and exclude
         }
+
 
         if ( not is_token( NEWLINE )) {
             report("Expected newline but got '{}'", token.get_value());
@@ -153,14 +166,14 @@ void Parser::print_config() {
             using T = std::decay_t< decltype( value )>;
 
             if constexpr (std::is_same_v<T, std::string>) {
-                std::println("{} : {}", identifier, value);
+                std::println("{:<14}: {}", identifier, value);
 
             } else if constexpr (std::is_same_v<T, int64_t>) {
-                std::println("{} : {}", identifier, value);
+                std::println("{:<14}: {}", identifier, value);
 
             } else if constexpr (std::is_same_v<T, std::shared_ptr<DirTree>>) {
-                std::println("{}:\n", identifier);
-                value->print_tree();
+                std::println("{}:", identifier);
+                value->print_tree(11);
             }
 
         }, values.second);

@@ -7,7 +7,7 @@ std::string_view Token::get_typestr( std::optional<Type> token_type ) const {
         case BEGIN_FILE     : return "BEGIN_FILE"     ;
         case IDENTIFIER     : return "IDENTIFIER"     ;
         case STRING         : return "STRING"         ;
-        case UNCLOSED_STRING: return "STRING_INVALD"  ;
+        case UNCLOSED_STRING: return "UNCLOSED_STRING";
         case VALID_NUMBER   : return "VALID_NUMBER"   ;
         case INVALID_NUMBER : return "INVALID_NUMBER" ;
         case NEWLINE        : return "NEWLINE"        ;
@@ -17,7 +17,7 @@ std::string_view Token::get_typestr( std::optional<Type> token_type ) const {
         case PATHS_BLOCK    : return "PATHS_BLOCK"    ;
         case INDENT_TAB     : return "INDENT_TAB"     ;
         case INDENT_SPACE   : return "INDENT_SPACE"   ;
-        case INDENT_MIXTED  : return "INDENT_MIXTED"  ;
+        case INDENT_MIXED   : return "INDENT_MIXED"   ;
         case END_OF_FILE    : return "END_OF_FILE"    ;
         default:
             return "Unknow";
