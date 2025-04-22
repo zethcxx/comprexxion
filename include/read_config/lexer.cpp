@@ -108,7 +108,7 @@ Token Lexer::get_next_token() {
             return parse_symbol();
     }
 
-    return make_token( TOKEN::END_OF_FILE, "" );
+    return make_token( TOKEN::END_OF_FILE, "EOF" );
 }
 
 

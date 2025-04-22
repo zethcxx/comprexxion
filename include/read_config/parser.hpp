@@ -87,7 +87,16 @@ public:
     // +
     bool is_token( const Token::Type &expected_token ) const;
     // +
-    std::optional<std::int32_t> parse_int32( std::string_view str ) const;
+    [[nodiscard]]
+    bool has_errors( void ) const { return _has_errors; }
+    // +
+    bool parse_paths_block( Identifier_value &raw_value );
+    //+
+    std::optional<Identifier_value>
+    validate_data_type( const std::string &identifier );
+    // +
+    std::optional<std::int32_t>
+    parse_int32( std::string_view str ) const;
     // +
     template<typename... Args>
     void report(

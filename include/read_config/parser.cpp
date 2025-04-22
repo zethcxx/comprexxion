@@ -60,14 +60,13 @@ void Parser::parsing() {
         return false;
     };
 
-    /* Stop if the file only had empty lines */
     if ( is_token( BEGIN_FILE )) advance();
 
     while ( not is_token( END_OF_FILE )) {
 
         skip_empty_lines();
 
-        /* only empty lines */
+        /* Stop if the file only had empty lines */
         if ( is_token( END_OF_FILE )) break;
 
 
@@ -89,9 +88,6 @@ void Parser::parsing() {
         }
 
 
-        const TOKEN allowed_type = identifiers_on_top.at( identifier ).first;
-
-
         if ( is_duplicate( identifier )) {
             report("Duplicate identifier '{}'", identifier);
             break;
@@ -106,58 +102,98 @@ void Parser::parsing() {
         } else advance();
 
 
-        const std::string value_str = token.get_value();
-        Identifier_value value = token.get_value();
+        const auto  parsed_value = validate_data_type( identifier );
 
-        if ( not is_token( allowed_type )) {
-            auto type_str = std::string( token.get_typestr( allowed_type ));
-
-            std::ranges::transform( type_str, type_str.begin(),
-                []( unsigned char c ){
-                    return std::tolower(c);
-                }
-            );
-
-            report( "Expected valid {} for '{}' but got '{}'.",
-                type_str,
-                identifier,
-                value_str
-            );
-
-        } else if ( is_token( STRING ) and token.get_value().empty() ) {
-            report(
-                "The value for '{}' cannot be an empty string.",
-                identifier
-            );
-            break;
-
-        } else if ( is_token( VALID_NUMBER ) ) {
-            auto valid_int32 = parse_int32( value_str );
-
-            if ( not valid_int32 ) {
-                report( "Invalid int32 value: '{}'.", value_str );
-                break;
-
-            } else value = valid_int32.value();
-
-        }
+        if ( not parsed_value.has_value() ) break;
+        else advance();
 
 
-        if ( not is_token( PATHS_BLOCK )) {
-            advance(); // skip newline
-            // TODO: Implement validation for the block that will contain
-            // paths to include and exclude
-        }
-
-
-        if ( not is_token( NEWLINE )) {
+        if ( not is_token( NEWLINE ) and not is_token( END_OF_FILE )) {
             report("Expected newline but got '{}'", token.get_value());
             break;
         }
 
         /* if is valid <identifier> : <value> \n */
-        identifiers_on_top.at( identifier ).second = value;
+        identifiers_on_top.at( identifier ).second = parsed_value.value();
     }
+}
+
+
+std::optional<Parser::Identifier_value>
+Parser::validate_data_type( const std::string &identifier ) {
+    using enum TOKEN;
+
+
+    Identifier_value raw_value   = token.get_value();
+    std::string      value_str   = token.get_value();
+    Token::Type      type        = identifiers_on_top.at(identifier).first;
+
+
+    if ( type == PATHS_BLOCK and is_token( NEWLINE )) {
+        skip_empty_lines();
+
+        if ( not is_token( INDENT_SPACE ) and not is_token( INDENT_TAB )) {
+            report( "Expected spaces or tabs after newline, but got '{}'",
+                    token.get_value()
+            );
+
+            return std::nullopt;
+        }
+
+        bool success = parse_paths_block( raw_value );
+
+        if ( not success )
+            return std::nullopt;
+
+    } else if ( not is_token( type )) {
+        auto type_str = std::string( token.get_typestr( type ));
+
+        /* convert type_str to lowercase */
+        std::ranges::transform( type_str, type_str.begin(),
+            []( unsigned char c ){
+                if ( c == '_' ) return int(' ');
+                return std::tolower(c);
+            }
+        );
+
+        report( "Expected valid {} for '{}' but got '{}'.",
+                type_str,
+                identifier,
+                value_str
+        );
+
+        return std::nullopt;
+
+    }
+
+    if ( is_token( STRING ) and token.get_value().empty() ) {
+        report( "The value for '{}' cannot be an empty string.",
+                identifier
+        );
+
+        return std::nullopt;
+    }
+
+
+    if ( is_token( VALID_NUMBER ) ) {
+        auto valid_int32 = parse_int32( value_str );
+
+        if ( not valid_int32 ) {
+            report( "Invalid int32 value: '{}'.", value_str );
+            return std::nullopt;
+        }
+
+        raw_value = valid_int32.value();
+    }
+
+    return raw_value;
+}
+
+
+bool Parser::parse_paths_block( Identifier_value &raw_value ) {
+    (void) raw_value;
+    // TODO: Implement the logic for parsing the paths block.
+    return true;
 }
 
 
