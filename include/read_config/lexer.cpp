@@ -8,7 +8,7 @@ Token Lexer::make_token(
 ) {
     size_t char_pos = column - value.length();
 
-    if ( value == "\n" )
+    if ( value == "\\n" )
         column = 1;
 
     return { type, line, char_pos, value };
