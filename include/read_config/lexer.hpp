@@ -10,30 +10,35 @@ public:
     // --- Constructors:
     explicit Lexer(const std::filesystem::path &_filepath);
 
+    // --- Input File Path:
+    std::filesystem::path filepath;
 
-    // --- Main Functions:
+
+    // --- Main Methods:
     Token get_next_token();
     Token get_curr_token();
 
 
-    // --- Helper Functions:
+    // --- Helper Method:
+    [[nodiscard]]
+    bool has_errors( void ) const {
+        return _has_errors;
+    }
+
+
+    // --- Helper Function:
     static bool is_valid_char ( const char &c );
     static bool is_digit      ( const char &c );
     static bool is_indent_char( const char &c );
 
-
-    // --- Error Flag:
-    bool has_errors = false;
-
-
-    // --- Input File Path:
-    std::filesystem::path filepath;
 
 private:
 
     // --- File Stream:
     std::ifstream file;
 
+    // --- Error Flag:
+    bool _has_errors = false;
 
     // -- Lexer State:
     std::size_t line   = 1;

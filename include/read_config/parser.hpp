@@ -18,15 +18,6 @@ public:
     Parser ( Lexer &_lexer );
 
 
-    // --- Main members:
-    Lexer &lexer;
-    Token  token;
-
-
-    // --- Error state:
-    bool has_errors = false;
-
-
     // --- Types:
     using TOKEN = Token::Type;
     // +
@@ -82,14 +73,14 @@ public:
     };
 
 
-    // --- Helpers Methods:
-    std::string get_current_dir_name( void );
-    std::string get_current_dir_path( void );
-
     // --- Main Method:
     void parsing( void );
 
+
     // --- Helpers Methods:
+    std::string get_current_dir_name( void );
+    std::string get_current_dir_path( void );
+    // +
     void skip_empty_lines( void );
     void print_config    ( void );
     void advance         ( void );
@@ -104,7 +95,7 @@ public:
         Args&&... args
     ) {
         namespace fs = std::filesystem;
-        this->has_errors = true;
+        _has_errors = true;
 
         std::println( stderr, "File \"{}:{}:{}\"",
             fs::absolute( lexer.filepath ).string(),
@@ -119,4 +110,14 @@ public:
 
         std::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
     }
+
+
+private:
+    // --- Main members:
+    Lexer &lexer;
+    Token  token;
+
+
+    // --- Error state:
+    bool _has_errors = false;
 };

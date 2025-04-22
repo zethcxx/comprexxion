@@ -264,7 +264,7 @@ Lexer::Lexer ( const std::filesystem::path &_filepath )
         return;
     }
 
-    has_errors = true;
+    _has_errors = true;
 
     std::println( stderr, "File \"{}\"",
             std::filesystem::absolute( _filepath ).string()

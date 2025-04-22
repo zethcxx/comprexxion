@@ -60,6 +60,7 @@ void Parser::parsing() {
         return false;
     };
 
+    /* Stop if the file only had empty lines */
     if ( is_token( BEGIN_FILE )) advance();
 
     while ( not is_token( END_OF_FILE )) {
