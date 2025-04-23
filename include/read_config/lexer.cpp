@@ -185,6 +185,7 @@ Token Lexer::parse_symbol() {
             advance();
             return make_token( ASSIGN, symbol );
 
+        case '-':
         case '+':
             advance();
             return make_token( PATH_INDICATOR, symbol );
