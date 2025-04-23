@@ -5,8 +5,13 @@
 Token Lexer::make_token(
     const Token::Type  type,
     const std::string &value
-) const {
-    return { type, line, column - value.length(), value };
+) {
+    size_t char_pos = column - value.length();
+
+    if ( value == "\n" )
+        column = 1;
+
+    return { type, line, char_pos, value };
 }
 
 
@@ -82,7 +87,6 @@ Token Lexer::get_next_token() {
             if ( curr_char == '\n' ) {
                 line++;
                 advance();
-                column = 1;
 
                 return make_token( TOKEN::NEWLINE, "\\n" );
             }

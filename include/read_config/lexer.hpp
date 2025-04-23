@@ -82,5 +82,5 @@ private:
     Token make_token(
         const Token::Type  type,
         const std::string &value
-    ) const;
+    );
 };
