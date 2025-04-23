@@ -8,8 +8,9 @@ class DirTree {
 
 public:
 
-    // --- Constructor
+    // --- Constructors:
     DirTree();
+    DirTree( const std::string& _root_name );
 
 
     // --- Tree Printing

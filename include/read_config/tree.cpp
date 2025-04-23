@@ -131,3 +131,8 @@ DirTree::DirTree ()
   : root      { std::make_unique<Node>("./", true) },
     curr_node { root.get()                         }
 {}
+
+DirTree::DirTree (const std::string &_root_name)
+  : root      { std::make_unique<Node>(_root_name, true) },
+    curr_node { root.get()                         }
+{}
