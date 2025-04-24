@@ -4,7 +4,7 @@ std::string_view Token::get_typestr( std::optional<Type> token_type ) const {
     using enum Type;
 
     switch ( token_type.value_or( this->type )) {
-        case BEGIN_FILE     : return "BEGIN_FILE"     ;
+        case BEGIN_OF_FILE  : return "BEGIN_OF_FILE"  ;
         case IDENTIFIER     : return "IDENTIFIER"     ;
         case STRING         : return "STRING"         ;
         case UNCLOSED_STRING: return "UNCLOSED_STRING";
@@ -39,8 +39,8 @@ Token::Token (
 
 
 Token::Token ()
-  : type   { Type::BEGIN_FILE },
+  : type   { Type::BEGIN_OF_FILE },
     line   { 1 },
     column { 1 },
-    value  { 0 }
+    value  { "BEGIN_OF_FILE" }
 {}

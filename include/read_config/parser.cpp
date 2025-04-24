@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#include "read_config/tree.hpp"
 #include "token.hpp"
 
 #include <algorithm>
@@ -42,6 +43,20 @@ std::optional<std::int32_t> Parser::parse_int32( std::string_view str ) const {
     return std::nullopt;
 }
 
+std::string Parser::type_str_lowercase( const TOKEN &type ) {
+    auto type_str = std::string( token.get_typestr( type ));
+
+    /* convert type_str to lowercase */
+    std::ranges::transform( type_str, type_str.begin(),
+        []( unsigned char c ){
+            if ( c == '_' ) return int(' ');
+            return std::tolower(c);
+        }
+    );
+
+    return type_str;
+}
+
 
 void Parser::skip_empty_lines() {
     while ( is_token( TOKEN::NEWLINE )) advance();
@@ -60,7 +75,7 @@ void Parser::parsing() {
         return false;
     };
 
-    if ( is_token( BEGIN_FILE )) advance();
+    if ( is_token( BEGIN_OF_FILE )) advance();
 
     while ( not is_token( END_OF_FILE )) {
 
@@ -146,18 +161,8 @@ Parser::validate_data_type( const std::string &identifier ) {
             return std::nullopt;
 
     } else if ( not is_token( type )) {
-        auto type_str = std::string( token.get_typestr( type ));
-
-        /* convert type_str to lowercase */
-        std::ranges::transform( type_str, type_str.begin(),
-            []( unsigned char c ){
-                if ( c == '_' ) return int(' ');
-                return std::tolower(c);
-            }
-        );
-
         report( "Expected valid {} for '{}' but got '{}'.",
-                type_str,
+                type_str_lowercase( type ),
                 identifier,
                 value_str
         );
@@ -191,8 +196,161 @@ Parser::validate_data_type( const std::string &identifier ) {
 
 
 bool Parser::parse_paths_block( Identifier_value &raw_value ) {
-    (void) raw_value;
-    // TODO: Implement the logic for parsing the paths block.
+    using enum TOKEN;
+
+    const size_t block_indent_size = token.get_value().length();
+    const auto   indent_type       = token.get_type();
+
+    std::size_t before_indent_level = 1;
+
+    std::string root_name = std::get<std::string>(
+        identifiers_on_top.at( "project_root" ).second
+    );
+    auto tree = std::make_shared<DirTree>( root_name );
+
+    bool last_was_directory = false;
+    while ( not is_token( END_OF_FILE )) {
+
+        if ( is_token ( INDENT_MIXED )) {
+            report( "Mixed spaces and tabs" );
+            return false;
+        }
+
+        if ( not is_token( indent_type )) {
+            report( "Expected {} after newline, but got '{}'",
+                    type_str_lowercase( indent_type ),
+                    token.get_value()
+            );
+            return false;
+
+        }
+
+        const std::size_t
+              indent_size  = token.get_value().length(),
+              indent_level = indent_size / block_indent_size,
+              extra_indent = indent_size % block_indent_size;
+
+        const auto before_token = token;
+        advance();
+        const auto current_token = token;
+
+        /* ignore empty lines */
+        if ( is_token( NEWLINE )) {
+            skip_empty_lines();
+            continue;
+        };
+
+
+        token = before_token;
+        if ( indent_level > before_indent_level+1 ) {
+            report(
+                "Expected {} blocks of indentation, but got {}",
+                before_indent_level+1,
+                indent_level
+            );
+            return false;
+
+        } else if ( extra_indent > 0 ) {
+            report(
+                "Extra indentation of {} character(s).",
+                extra_indent
+            );
+            return false;
+
+        } else if ( not last_was_directory ) {
+            if ( indent_level > before_indent_level ) {
+                report(
+                    "Expected {} blocks of indentation, but got {}",
+                    before_indent_level,
+                    indent_level
+                );
+                return false;
+            }
+        }
+
+        token = current_token;
+
+
+        if ( not is_token( PATH_INDICATOR )) {
+            report(
+                "Expected path indicator (+/-), but got '{}'",
+                token.get_value()
+            );
+            return false;
+
+        }
+
+        const char tye_indicator = token.get_value()[0];
+
+        // TODO: add support for excluded paths
+        if ( tye_indicator == '-' ) {
+            report(
+                "Invalid path indicator: '{}'",
+                token.get_value()
+            );
+            return false;
+        }
+
+        advance();
+
+
+        if ( not is_token( IDENTIFIER )) {
+            report(
+                "Expected identifier (f/d), but got '{}'",
+                token.get_value()
+            );
+            return false;
+
+        }
+
+        bool is_directory = token.get_value() == "d";
+        last_was_directory = is_directory;
+        advance();
+
+
+        if ( not is_token( STRING )) {
+            report(
+                "Expected string, but got '{}'",
+                token.get_value()
+            );
+            return false;
+
+        } else if ( token.get_value().empty() ) {
+            report( "The path cannot be an empty string." );
+            return false;
+        }
+
+        const std::string path = token.get_value();
+        advance();
+
+
+        if ( not is_token( NEWLINE )) {
+            report(
+                "Expected newline after path, but got '{}'",
+                token.get_value()
+            );
+            return false;
+
+        } else skip_empty_lines();
+
+
+        if ( indent_level < before_indent_level )
+            (void)tree->go_to_parent();
+
+
+        (void)tree->add_child(
+            path,
+            is_directory
+        );
+
+        if ( is_directory ) {
+            (void)tree->go_to_child( path );
+        }
+
+        before_indent_level = indent_level;
+    }
+
+    raw_value = tree;
     return true;
 }
 

@@ -73,13 +73,16 @@ public:
     };
 
 
-    // --- Main Method:
-    void parsing( void );
+    // --- Main Methods:
+    void parsing ( void );
+    void backward( void );
 
 
     // --- Helpers Methods:
     std::string get_current_dir_name( void );
     std::string get_current_dir_path( void );
+    // +
+    std::string type_str_lowercase( const TOKEN &type );
     // +
     void skip_empty_lines( void );
     void print_config    ( void );
