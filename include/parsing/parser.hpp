@@ -1,8 +1,8 @@
 #pragma once
 
-#include "lexer.hpp"
-#include "token.hpp"
-#include "tree.hpp"
+#include "parsing/lexer.hpp"
+#include "parsing/token.hpp"
+#include "parsing/tree.hpp"
 
 #include <memory>
 #include <string_view>
@@ -73,38 +73,44 @@ public:
     };
 
 
-    // --- Main Methods:
-    void parsing ( void );
-    void backward( void );
-
-
     // --- Helpers Methods:
     std::string get_current_dir_name( void );
     std::string get_current_dir_path( void );
-    // +
-    std::string type_str_lowercase( const TOKEN &type );
-    // +
-    void skip_empty_lines( void );
-    void print_config    ( void );
+    std::string get_lowercase       ( std::string_view str );
+
+    // --- Utility Functions:
     void advance         ( void );
-    // +
-    bool is_token( const Token::Type &expected_token ) const;
-    // +
+    void backward        ( void );
+    void parsing         ( void );
+    void print_config    ( void );
+    void skip_empty_lines( void );
+
+
+    // --- Error Handling Methods:
     [[nodiscard]]
-    bool has_errors( void ) const { return _has_errors; }
-    // +
+    bool has_errors( void ) const;
+
+
+    // --- Token Checking:
+    bool is_token( const TOKEN &expected_token ) const;
+
+
+    // --- Parsing Methods:
     bool parse_paths_block( Identifier_value &raw_value );
-    //+
-    std::optional<Identifier_value>
-    validate_data_type( const std::string &identifier );
+
+
+    // --- Data Validation:
+    std::optional <std::int32_t>
+    parse_int32       ( std::string_view string     ) const;
     // +
-    std::optional<std::int32_t>
-    parse_int32( std::string_view str ) const;
-    // +
-    template<typename... Args>
-    void report(
-        std::format_string<Args...> format_str,
-        Args&&... args
+    std::optional <Identifier_value>
+    validate_data_type( std::string_view identifier );
+
+
+    // Reporting Methods:
+    template <typename... Args>
+    void report( std::format_string <Args...> format_str,
+                 Args&&... args
     ) {
         namespace fs = std::filesystem;
         _has_errors = true;

@@ -1,6 +1,9 @@
 #pragma once
 
-#include "token.hpp"
+// --- My Includes:
+#include "parsing/token.hpp"
+
+// --- Standard Includes:
 #include <fstream>
 #include <filesystem>
 #include <vector>
@@ -19,14 +22,14 @@ public:
     Token get_curr_token();
 
 
-    // --- Helper Method:
+    // --- Error Handling:
     [[nodiscard]]
     bool has_errors( void ) const {
         return _has_errors;
     }
 
 
-    // --- Helper Function:
+    // --- Helper Methods:
     static bool is_valid_char ( const char &c );
     static bool is_digit      ( const char &c );
     static bool is_indent_char( const char &c );

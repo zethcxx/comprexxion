@@ -1,8 +1,10 @@
 #pragma once
 
+// --- Standard Includes:
 #include <memory>
 #include <string>
 #include <unordered_map>
+
 
 class DirTree {
 
@@ -13,27 +15,39 @@ public:
     DirTree( const std::string& _root_name );
 
 
+    // --- Errors Types:
+    enum class Errors : std::uint8_t {
+        NONE,
+        NO_SUCH_CHILD,
+        NO_SUCH_PARENT,
+        ALREADY_EXISTS,
+        INVALID_NAME,
+        INVALID_PATH,
+        INVALID_TYPE,
+        INVALID_VALUE
+    };
+
+
     // --- Tree Printing
-    void print_tree  ( size_t initial_indent = 0);
+    void print_tree ( size_t initial_indent = 0 ) const noexcept;
 
 
     // --- Current Node Methods
     [[nodiscard]]
-    bool go_to_parent( void );
-    // +
-    bool has_parent  ( void ) const;
-    // +
-    bool go_to_child ( const std::string& name );
-    // +
+    Errors go_to_parent( void );
+    Errors go_to_child ( const std::string& name );
+    Errors add_child   ( const std::string& name,
+                         const bool is_directory = true );
+
+
+    // --- Current Node Properties:
     [[nodiscard]]
-    bool add_child( const std::string& name,
-                    const bool is_directory = true );
+    bool has_parent( void ) const;
 
-
-    // --- Helper Method:
+    // --- Error Handling Methods:
     [[nodiscard]]
     bool has_errors( void ) const {
-        return _has_errors;
+        return curr_error != Errors::NONE;
     }
 
 
@@ -65,7 +79,6 @@ private:
     // --- Current Node Of Tree:
     Node* curr_node;
 
-
-    // --- Error State:
-    bool _has_errors = false;
+    // --- Error Handling:
+    Errors curr_error = Errors::NONE;
 };

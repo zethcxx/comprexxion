@@ -1,4 +1,7 @@
-#include "tree.hpp"
+// --- My Includes:
+#include "parsing/tree.hpp"
+
+// --- Standard Includes:
 #include <memory>
 #include <print>
 #include <vector>
@@ -6,48 +9,54 @@
 
 bool DirTree::has_parent() const {
     return curr_node->parent != nullptr;
-
 }
 
-bool DirTree::add_child( const std::string &name,
-                         const bool is_directory
+
+DirTree::Errors DirTree::add_child(
+    const std::string &name,
+    const bool is_directory
 ) {
     const auto &children = curr_node->children;
 
-    if ( not curr_node->is_directory or children.contains(name) )
-        return false;
+    if ( not curr_node->is_directory )
+        return Errors::INVALID_TYPE;
+
+    else if ( children.contains(name) )
+        return Errors::ALREADY_EXISTS;
+
 
     curr_node->children.insert({
         name,
         std::make_unique<Node>(name, is_directory, curr_node)
     });
 
-    return true;
+    return Errors::NONE;
 }
 
 
-bool DirTree::go_to_parent() {
+DirTree::Errors DirTree::go_to_parent() {
     // --- if curr_node is root
     if ( not has_parent() )
-        return false;
+        return Errors::NO_SUCH_PARENT;
 
     curr_node = curr_node->parent;
-    return true;
+    return Errors::NONE;
 }
 
 
-bool DirTree::go_to_child( const std::string& name ) {
+DirTree::Errors DirTree::go_to_child( const std::string& name ) {
     const auto &node = curr_node->children.find(name);
 
     if ( node == curr_node->children.end() )
-        return false;
+        return Errors::NO_SUCH_CHILD;
+
 
     curr_node = node->second.get();
-    return true;
+    return Errors::NONE;
 }
 
 
-void DirTree::print_tree( size_t initial_indent ) {
+void DirTree::print_tree( size_t initial_indent ) const noexcept {
     static std::string indent_str = std::string(initial_indent, ' ');
 
     using std::print, std::println;
@@ -116,6 +125,7 @@ void DirTree::print_tree( size_t initial_indent ) {
 }
 
 
+// --- Node Constructor:
 DirTree::Node::Node (
     const std::string &_name,
     const bool _is_directory,
@@ -127,11 +137,13 @@ DirTree::Node::Node (
 {}
 
 
+// --- DirTree Default Constructor:
 DirTree::DirTree ()
   : root      { std::make_unique<Node>("./", true) },
     curr_node { root.get()                         }
 {}
 
+// --- DirTree Custom Constructor:
 DirTree::DirTree (const std::string &_root_name)
   : root      { std::make_unique<Node>(_root_name, true) },
     curr_node { root.get()                         }
