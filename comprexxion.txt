@@ -9,6 +9,8 @@ compress_level: 4
 # ----------------
 #  FILES SELECTED
 # ----------------
-#structure:
-#    +d "src/"
-#        +f "main.cpp"
+structure:
+    +d "src/"
+        +f "main.cpp"
+
+    +d "include/"
