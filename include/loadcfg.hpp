@@ -1,9 +1,6 @@
 #pragma once
 
-// --- Standard Includes:
-#include <string_view>
-
 namespace cfg {
-    bool loadcfg( std::string_view filepath = "comprexxion.txt" );
+    bool loadcfg( int argc, char *argv[] );
     void usage  ( void );
 }

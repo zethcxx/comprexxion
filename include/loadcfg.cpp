@@ -7,9 +7,31 @@
 #include <fmt/core.h>
 
 // --- Standard Includes:
+#include <span>
+#include <ranges>
+#include <string>
 #include <string_view>
 
-bool cfg::loadcfg( std::string_view filepath ) {
+bool cfg::loadcfg( int argc, char *argv[] ) {
+
+    /* Parse command line arguments */
+    const auto args = std::span( argv, std::size_t(argc) )
+            | std::views::transform( []( const char *arg ) {
+                return std::string_view( arg );
+            });
+
+    std::string filepath { "comprexxion.txt" };
+
+    /* Check if the filepath is specified */
+    if ( args.size() == 3 and args[1] == "-c" ) {
+        filepath = args[2];
+
+    } else if ( args.size() != 1 ) {
+        cfg::usage();
+        return false;
+    }
+
+
     Lexer  lexer  { filepath };
     Parser parser { lexer };
 
