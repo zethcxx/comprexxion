@@ -1,15 +1,20 @@
 #pragma once
 
+// --- My Includes:
 #include "parsing/lexer.hpp"
 #include "parsing/token.hpp"
 #include "parsing/tree.hpp"
 
+// --- External Includes:
+#include <fmt/core.h>
+
+// --- Standard Includes:
 #include <memory>
 #include <string_view>
 #include <map>
 #include <utility>
 #include <variant>
-#include <print>
+#include <format>
 
 
 class Parser {
@@ -115,7 +120,7 @@ public:
         namespace fs = std::filesystem;
         _has_errors = true;
 
-        std::println( stderr, "File \"{}:{}:{}\"",
+        fmt::println( stderr, "File \"{}:{}:{}\"",
             fs::absolute( lexer.filepath ).string(),
             token.get_line    (),
             token.get_column  ()
@@ -126,7 +131,7 @@ public:
             std::forward<Args>(args)...
         );
 
-        std::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
+        fmt::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
     }
 
 

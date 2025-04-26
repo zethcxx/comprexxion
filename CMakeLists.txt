@@ -1,17 +1,29 @@
 cmake_minimum_required ( VERSION 3.20 )
 
 project ( COMPREXXION
-    VERSION     0.20
+    VERSION     0.21
     DESCRIPTION "Copia ciertos elementos de un proyecto y luego lo comprime."
     LANGUAGES   CXX
 )
 
 set(CMAKE_CXX_STANDARD_REQUIRED   ON)
 set(CMAKE_CXX_EXTENSIONS         OFF)
-set(CMAKE_CXX_STANDARD            23)
+set(CMAKE_CXX_STANDARD            20)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_NAME comprexxion)
+
+# --- For Extra Resources
+include(FetchContent)
+
+# --- External Dependencie: fmt
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG        11.1.4
+)
+FetchContent_MakeAvailable(fmt)
+
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include/
@@ -74,7 +86,7 @@ target_compile_options( ${EXECUTABLE_NAME}
             -ffunction-sections
             -fvisibility=hidden
             -fvisibility-inlines-hidden
-            -fno-asynchronous-unwind-tables
+            # -fno-asynchronous-unwind-tables # <- not working in TDM
         >
 )
 
@@ -88,4 +100,5 @@ target_link_options( ${EXECUTABLE_NAME}
 
 target_link_libraries( ${EXECUTABLE_NAME}
     PRIVATE
+        fmt::fmt
 )

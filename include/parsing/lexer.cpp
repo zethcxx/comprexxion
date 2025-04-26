@@ -1,9 +1,11 @@
 // --- My Includes:
 #include "parsing/lexer.hpp"
 
+// --- External Includes:
+#include <fmt/core.h>
+
 // --- Standard Includes:
 #include <cstring>
-#include <print>
 
 Token Lexer::make_token(
     const Token::Type  type,
@@ -274,9 +276,9 @@ Lexer::Lexer ( const std::filesystem::path &_filepath )
 
     _has_errors = true;
 
-    std::println( stderr, "File \"{}\"",
+    fmt::println( stderr, "File \"{}\"",
             std::filesystem::absolute( _filepath ).string()
         );
 
-    std::println( stderr, "Error: {}", std::strerror( errno ));
+    fmt::println( stderr, "Error: {}", std::strerror( errno ));
 }

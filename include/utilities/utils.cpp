@@ -1,7 +1,13 @@
+// --- My Includes:
 #include "utilities/utils.hpp"
 
+// --- External Includes:
+#include <fmt/core.h>
+
+// --- Standard Includes:
 #include <cstdint>
-#include <print>
+#include <string>
+
 
 __attribute__((no_sanitize("address")))
 void utils::memdump( const void *const address,
@@ -21,12 +27,12 @@ void utils::memdump( const void *const address,
     for (; curr_ptr < end_ptr; curr_ptr += 16) {
         std::uint8_t str_idx {0};
 
-        std::print("\x1b[38;5;12m{:#x}\x1b[0;0m: ", curr_ptr);
+        fmt::print("\x1b[38;5;12m{:#x}\x1b[0;0m: ", curr_ptr);
 
         for (; offset < limit ; offset++) {
             const std::uint8_t byte = mem[offset];
 
-            std::print("{:02x} ", byte);
+            fmt::print("{:02x} ", byte);
 
             string.at( str_idx ) =
                 ( byte >= 33 && byte <= 126 )
@@ -46,11 +52,11 @@ void utils::memdump( const void *const address,
 
         /* for left padding */
         if ( offset == limit )
-            std::print( "{:>{}}",
+            fmt::print( "{:>{}}",
                 "",
                 ((curr_ptr + 16) - end_ptr) * 3
             );
 
-        std::println(" {}", string);
+        fmt::println(" {}", string);
     }
 }

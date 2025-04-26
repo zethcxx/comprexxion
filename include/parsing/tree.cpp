@@ -1,9 +1,11 @@
 // --- My Includes:
 #include "parsing/tree.hpp"
 
+// --- External Includes:
+#include <fmt/core.h>
+
 // --- Standard Includes:
 #include <memory>
-#include <print>
 #include <vector>
 #include <utility>
 
@@ -59,7 +61,7 @@ DirTree::Errors DirTree::go_to_child( const std::string& name ) {
 void DirTree::print_tree( size_t initial_indent ) const noexcept {
     static std::string indent_str = std::string(initial_indent, ' ');
 
-    using std::print, std::println;
+    using fmt::print, fmt::println;
 
     struct DirFrame {
         decltype ( Node::children )::iterator begin;

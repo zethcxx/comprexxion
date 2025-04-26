@@ -3,6 +3,9 @@
 #include "parsing/token.hpp"
 #include "parsing/tree.hpp"
 
+// --- External Includes:
+#include <fmt/core.h>
+
 // --- Standard Includes:
 #include <charconv>
 #include <filesystem>
@@ -390,13 +393,13 @@ void Parser::print_config() {
             using T = std::decay_t< decltype( value )>;
 
             if constexpr (std::is_same_v<T, std::string>) {
-                std::println("{:<14}: {}", identifier, value);
+                fmt::println("{:<14}: {}", identifier, value);
 
             } else if constexpr (std::is_same_v<T, int64_t>) {
-                std::println("{:<14}: {}", identifier, value);
+                fmt::println("{:<14}: {}", identifier, value);
 
             } else if constexpr (std::is_same_v<T, std::shared_ptr<DirTree>>) {
-                std::println("{}:", identifier);
+                fmt::println("{}:", identifier);
                 value->print_tree(11);
             }
 
