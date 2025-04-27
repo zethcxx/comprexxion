@@ -183,20 +183,19 @@ Token Lexer::parse_string() {
 
 Token Lexer::parse_symbol() {
     using enum Token::Type;
-    std::string symbol{ 1, curr_char };
+    std::string symbol( 1, curr_char );
 
-    switch ( curr_char ) {
+    advance();
+
+    switch ( symbol.at(0) ) {
         case ':':
-            advance();
             return make_token( ASSIGN, symbol );
 
         case '-':
         case '+':
-            advance();
             return make_token( PATH_INDICATOR, symbol );
 
         default:
-            advance();
             return make_token( SYMBOL, symbol );
     }
 }
