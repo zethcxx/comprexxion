@@ -9,6 +9,7 @@
 #include <vector>
 #include <utility>
 
+
 bool DirTree::has_parent() const {
     return curr_node->parent != nullptr;
 }
@@ -16,20 +17,21 @@ bool DirTree::has_parent() const {
 
 DirTree::Errors DirTree::add_child(
     const std::string &name,
-    const bool is_directory
+    NodeType type
 ) {
+    const auto &parent   = curr_node;
     const auto &children = curr_node->children;
 
-    if ( not curr_node->is_directory )
+    if ( not parent->is_directory() )
         return Errors::INVALID_TYPE;
 
     else if ( children.contains(name) )
         return Errors::ALREADY_EXISTS;
 
 
-    curr_node->children.insert({
+    parent->children.insert({
         name,
-        std::make_unique<Node>(name, is_directory, curr_node)
+        std::make_unique<Node>( name, type, parent )
     });
 
     return Errors::NONE;
@@ -64,9 +66,9 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
     using fmt::print, fmt::println;
 
     struct DirFrame {
-        decltype ( Node::children )::iterator begin;
-        decltype ( Node::children )::iterator end  ;
-        bool separator;
+        children_node_t::iterator begin;
+        children_node_t::iterator end  ;
+        bool sep;
     };
 
     std::vector<DirFrame> stack;
@@ -74,7 +76,7 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
     stack.push_back({
         .begin = root->children.begin(),
         .end   = root->children.end  (),
-        .separator = true,
+        .sep   = true,
     });
 
     print("{}", indent_str);
@@ -95,7 +97,7 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
         print("{}", indent_str);
 
         for ( size_t i = 0; i < stack.size()-1; i++ ) {
-            if ( stack.at( i ).separator )
+            if ( stack.at( i ).sep )
                 print("│  ");
             else
                 print("   ");
@@ -108,45 +110,55 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
             print("├── ");
         }
 
-        if ( node->is_directory )
+        if ( node->is_directory() )
             println("\x1b[34m{}\x1b[0m", name);
         else
             println("{}", name);
 
         it++;
 
-        if ( not node->is_directory and node->children.empty())
+        if ( not node->is_directory() and node->children.empty())
             continue;
 
         stack.push_back({
             .begin = node->children.begin(),
             .end   = node->children.end  (),
-            .separator = true
+            .sep = true
         });
     }
+}
+
+
+const DirTree::Node* DirTree::get_root( void ) const {
+    return root.get();
+}
+
+
+const DirTree::Node* DirTree::get_curr_node( void ) const {
+    return curr_node;
 }
 
 
 // --- Node Constructor:
 DirTree::Node::Node (
     const std::string &_name,
-    const bool _is_directory,
+    NodeType _type,
     Node *_parent
 )
-  : name         { _name         },
-    is_directory { _is_directory },
-    parent       { _parent       }
+  : name   { _name   },
+    type   { _type   },
+    parent { _parent }
 {}
 
 
 // --- DirTree Default Constructor:
 DirTree::DirTree ()
-  : root      { std::make_unique<Node>("./", true) },
-    curr_node { root.get()                         }
+  : root      { std::make_unique<Node>( "./", NodeType::IS_DIRECTORY ) },
+    curr_node { root.get() }
 {}
 
 // --- DirTree Custom Constructor:
 DirTree::DirTree (const std::string &_root_name)
-  : root      { std::make_unique<Node>(_root_name, true) },
-    curr_node { root.get()                         }
+  : root      { std::make_unique<Node>( _root_name, NodeType::IS_DIRECTORY ) },
+    curr_node { root.get() }
 {}

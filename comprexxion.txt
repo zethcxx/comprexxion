@@ -13,4 +13,5 @@ structure:
     +d "src/"
         +f "main.cpp"
 
-    +d "include/"
+    +d "include/" *
+        # +f "test.txt" # <- generate redundancy

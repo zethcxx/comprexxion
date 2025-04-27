@@ -19,13 +19,16 @@
 
 class Parser {
 public:
-    // --- Constructor:
-    Parser ( Lexer &_lexer );
+    // --- Error Handling Methods:
+    [[nodiscard]]
+    bool has_errors( void ) const;
 
 
-    // --- Types:
-    using TOKEN = Token::Type;
-    // +
+    // --- Debugging Methods:
+    void print_config( void );
+
+
+    // Types
     using Identifier_value = std::variant <
             std::string,
             std::int64_t,
@@ -35,69 +38,41 @@ public:
     using Identifiers_map  = std::map<
             std::string_view,
             std::pair<
-                TOKEN,
+                Token::Type,
                 Identifier_value
             >
         >;
 
+            // --- Constructor:
+    Parser ( Lexer &_lexer, Identifiers_map &_main_identifiers );
+
+
+private:
+    // --- Main members:
+    Lexer &lexer;
+    Token  token;
+
+    // --- Error state:
+    bool _has_errors = false;
+
 
     // --- Main Identifiers:
-    Identifiers_map identifiers_on_top {
-    /* "<identifier>" { <type>, <default_value> } */
-        {
-            "project_name"  , {
-                TOKEN::STRING,
-                get_current_dir_name()
-            }
-        },
-        {
-            "project_root"  , {
-                TOKEN::STRING,
-                get_current_dir_path()
-            }
-        },
-        {
-            "compress_type" , {
-                TOKEN::STRING,
-                std::string ( "gzip" )
-            }
-        },
-        {
-            "compress_level", {
-                TOKEN::VALID_NUMBER,
-                std::int32_t( 4 )
-            }
-        },
-        {
-            "structure"       , {
-                TOKEN::PATHS_BLOCK,
-                /* By default, the entire current directory is included */
-                std::make_shared<DirTree>(DirTree{})
-            }
-        },
-    };
+    Identifiers_map  &main_identifiers;
 
 
     // --- Helpers Methods:
-    std::string get_current_dir_name( void );
-    std::string get_current_dir_path( void );
-    std::string get_lowercase       ( std::string_view str );
+    std::string get_lowercase( std::string_view str );
 
-    // --- Utility Functions:
+
+    // --- Utility Methods:
     void advance         ( void );
     void backward        ( void );
-    void parsing         ( void );
-    void print_config    ( void );
     void skip_empty_lines( void );
-
-
-    // --- Error Handling Methods:
-    [[nodiscard]]
-    bool has_errors( void ) const;
+    bool parsing         ( void );
 
 
     // --- Token Checking:
-    bool is_token( const TOKEN &expected_token ) const;
+    bool is_token( const Token::Type &expected_token ) const;
 
 
     // --- Parsing Methods:
@@ -114,8 +89,8 @@ public:
 
     // Reporting Methods:
     template <typename... Args>
-    void report( std::format_string <Args...> format_str,
-                 Args&&... args
+    bool report_error( std::format_string <Args...> format_str,
+                       Args&&... args
     ) {
         namespace fs = std::filesystem;
         _has_errors = true;
@@ -132,15 +107,23 @@ public:
         );
 
         fmt::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
+        return false;
     }
+    // +
+    template <typename... Args>
+    bool report_error( const Token &temp_token,
+                       std::format_string <Args...> format_str,
+                       Args&&... args
+    ) {
+        const auto &last_token = this->token;
 
+        /* swap token for reporting */
+        token = temp_token;
 
-private:
-    // --- Main members:
-    Lexer &lexer;
-    Token  token;
+        report_error<Args...>( format_str, std::forward<Args>(args)... );
 
-
-    // --- Error state:
-    bool _has_errors = false;
+        /* Restore the original token */
+        token = last_token;
+        return false;
+    }
 };

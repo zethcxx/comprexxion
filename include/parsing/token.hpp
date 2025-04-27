@@ -11,7 +11,7 @@ class Token {
 public:
     // --- Tokens Types
     enum class Type : std::uint8_t {
-        BEGIN_OF_FILE     ,
+        BEGIN_OF_FILE  ,
         IDENTIFIER     ,
         STRING         ,
         UNCLOSED_STRING,

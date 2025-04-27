@@ -7,7 +7,6 @@
 
 
 class DirTree {
-
 public:
 
     // --- Constructors:
@@ -28,7 +27,14 @@ public:
     };
 
 
-    // --- Tree Printing
+    // --- Node Types:
+    enum class NodeType : std::uint8_t {
+        IS_DIRECTORY,
+        IS_FILE
+    };
+
+
+    // --- For Debuging:
     void print_tree ( size_t initial_indent = 0 ) const noexcept;
 
 
@@ -37,12 +43,11 @@ public:
     Errors go_to_parent( void );
     Errors go_to_child ( const std::string& name );
     Errors add_child   ( const std::string& name,
-                         const bool is_directory = true );
-
-
-    // --- Current Node Properties:
+                         NodeType type = NodeType::IS_DIRECTORY );
+    // +
     [[nodiscard]]
     bool has_parent( void ) const;
+
 
     // --- Error Handling Methods:
     [[nodiscard]]
@@ -50,13 +55,12 @@ public:
         return curr_error != Errors::NONE;
     }
 
-
 private:
 
     struct Node {
         // --- Basic Properties:
         std::string name;
-        bool is_directory;
+        NodeType    type;
         Node *parent;
 
         // --- Children Management:
@@ -64,12 +68,16 @@ private:
             std::string /* name of child */,
             std::unique_ptr<Node>> children {};
 
+        // --- Helper Methods:
+        [[nodiscard]]
+        bool is_directory( void ) const {
+            return type == NodeType::IS_DIRECTORY;
+        }
+
         // --- Constructor:
-        Node (
-            const std::string &_name,
-            const bool _is_directory,
-            Node *_parent = nullptr
-        );
+        Node ( const std::string &_name,
+               NodeType _type,
+               Node *_parent = nullptr );
     };
 
 
@@ -81,4 +89,14 @@ private:
 
     // --- Error Handling:
     Errors curr_error = Errors::NONE;
+
+
+public:
+    // --- Types:
+    using children_node_t = decltype ( Node::children );
+
+    // --- Get Methods:
+    const Node* get_root     ( void ) const;
+    const Node* get_curr_node( void ) const;
+
 };
