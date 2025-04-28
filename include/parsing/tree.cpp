@@ -8,6 +8,8 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <filesystem>
+#include <stack>
 
 
 bool DirTree::has_parent() const {
@@ -60,6 +62,53 @@ DirTree::Errors DirTree::go_to_child( const std::string& name ) {
 }
 
 
+DirTree::Errors DirTree::select_all_of( const Node* node ) {
+    namespace fs = std::filesystem;
+
+    /* Early Return */
+    if ( not node->is_directory() )
+        return Errors::INVALID_TYPE;
+
+    if ( not fs::exists( node->name ))
+        return Errors::INVALID_PATH;
+
+
+    const auto firstIterator = fs::directory_iterator( node->name );
+
+    std::stack<fs::directory_iterator> stack {{
+        firstIterator
+    }};
+
+    while ( not stack.empty() ) {
+        auto &dirEntry = stack.top();
+
+        if ( dirEntry == fs::end( dirEntry )) {
+            stack.pop();
+            (void)go_to_parent();
+            continue;
+        }
+
+        const auto path_name = dirEntry->path().filename().string();
+        const auto type_path = dirEntry->is_directory()
+            ? NodeType::IS_DIRECTORY
+            : NodeType::IS_FILE;
+
+        add_child( path_name, type_path );
+
+        if ( dirEntry->is_directory() ) {
+            stack.push( fs::directory_iterator( dirEntry->path() ) );
+            go_to_child( path_name );
+        }
+
+        dirEntry++;
+    }
+
+    go_to_child( node->name );
+
+    return Errors::NONE;
+}
+
+
 void DirTree::print_tree( size_t initial_indent ) const noexcept {
     static std::string indent_str = std::string(initial_indent, ' ');
 
@@ -83,7 +132,7 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
     println("root(\x1b[34m{}\x1b[0m)", root->name);
 
     while ( not stack.empty() ) {
-        auto &[it, it_end, separator] = stack.back();
+        auto &[it, it_end, sep] = stack.back();
 
         if ( it == it_end ) {
             stack.pop_back();
@@ -98,16 +147,16 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
 
         for ( size_t i = 0; i < stack.size()-1; i++ ) {
             if ( stack.at( i ).sep )
-                print("│  ");
+                print("\x1b[90m│  \x1b[0m");
             else
                 print("   ");
         }
 
         if ( next_it == it_end ) {
-            separator = false;
-            print("└── ");
+            sep = false;
+            print("\x1b[90m└── \x1b[0m");
         } else {
-            print("├── ");
+            print("\x1b[90m├── \x1b[0m");
         }
 
         if ( node->is_directory() )

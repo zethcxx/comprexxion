@@ -352,14 +352,6 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
             }
 
             path_select_all = true;
-
-            /*
-                TODO: Scan and select all items in current directory node
-
-                const auto path = tree->get_curr_node();
-                path.select_all();
-            */
-
             advance();
 
         } else path_select_all = false;
@@ -383,7 +375,6 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
         }
 
 
-
         (void)tree->add_child(
             path,
             curr_node_type
@@ -392,6 +383,12 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
 
         if ( curr_node_type == NodeType::IS_DIRECTORY )
             (void)tree->go_to_child( path );
+
+
+        if ( path_select_all )
+            tree->select_all_of(
+                tree->get_curr_node()
+            );
 
 
         last_indent_level = curr_indent_level;

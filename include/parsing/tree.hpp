@@ -99,4 +99,6 @@ public:
     const Node* get_root     ( void ) const;
     const Node* get_curr_node( void ) const;
 
+    // --- Actions:
+    Errors select_all_of( const Node* node );
 };
