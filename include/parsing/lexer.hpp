@@ -1,49 +1,61 @@
 #pragma once
 
-// --- My Includes:
+// ---- LOCAL INCLUDES ----
+//
 #include "parsing/token.hpp"
 
-// --- Standard Includes:
+
+// ---- STANDARD INCLUDES ----
+//
 #include <fstream>
 #include <filesystem>
 #include <vector>
 
+
 class Lexer {
 public:
-    // --- Constructors:
+    // ---- CONSTRUCTORS ----
+    //
     explicit Lexer(const std::filesystem::path &_filepath);
 
-    // --- Input File Path:
+
+    // ---- INPUT FILE PATH ----
+    //
     std::filesystem::path filepath;
 
 
-    // --- Main Methods:
+    // ---- MAIN METHODS ----
+    //
     Token get_next_token();
     Token get_curr_token();
 
 
-    // --- Error Handling:
+    // ---- ERROR HANDLING ----
+    //
     [[nodiscard]]
-    bool has_errors( void ) const {
-        return _has_errors;
-    }
+    bool has_errors( void ) const;
 
 
-    // --- Helper Methods:
-    static bool is_valid_char ( const char &c );
-    static bool is_digit      ( const char &c );
-    static bool is_indent_char( const char &c );
+    // ---- HELPER METHODS ----
+    //
+    static bool is_identifier_char ( const char &c );
+    static bool is_digit           ( const char &c );
+    static bool is_indent_char     ( const char &c );
 
 
 private:
-
-    // --- File Stream:
+    // ---- FILE STREAM ----
+    //
     std::ifstream file;
 
-    // --- Error Flag:
+
+    // ---- ERROR STATE ----
+    //
     bool _has_errors = false;
 
-    // -- Lexer State:
+
+    // ---- LEXER STATE ----
+    //
     std::size_t line   = 1;
     std::size_t column = 0;
     // +
@@ -52,7 +64,8 @@ private:
     bool  eof_flag  ;
 
 
-    // --- Buffer State:
+    // ---- BUFFER STATE ----
+    //
     static constexpr std::size_t BUFFER_SIZE = 4096;
     std::vector<char> buffer;
     // +
@@ -61,24 +74,26 @@ private:
     std::streampos file_pos   = 0;
 
 
-    // --- Buffer Handling:
+    // ---- BUFFER HANDLING ----
+    //
     bool fill_buffer     ( void );
     bool load_prev_buffer( void );
 
 
-    // --- Navigation:
+    // ---- NAVIGATION METHODS ----
+    //
     void advance ( void );
-    void backward( void );
 
 
-    // --- Token Parsers:
-    Token parse_identifier( void );
-    Token parse_indent    ( void );
-    Token parse_number    ( void );
-    Token parse_string    ( void );
-    Token parse_symbol    ( void );
+    // ---- SCANNING METHODS ----
+    //
+    Token tokenize_identifier( void );
+    Token tokenize_indent    ( void );
+    Token tokenize_number    ( void );
+    Token tokenize_string    ( void );
+    Token tokenize_symbol    ( void );
     // +
-    void parse_comment( void );
+    void skip_comment( void );
 
 
     // --- Creation Token:

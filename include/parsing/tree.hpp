@@ -1,6 +1,6 @@
 #pragma once
 
-// --- Standard Includes:
+// ---- STANDARD INCLUDES ----
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -9,12 +9,14 @@
 class DirTree {
 public:
 
-    // --- Constructors:
+    // ---- CONSTRUCTORS ----
+    //
     DirTree();
     DirTree( const std::string& _root_name );
 
 
-    // --- Errors Types:
+    // ---- ERRORS TYPES ----
+    //
     enum class Errors : std::uint8_t {
         NONE,
         NO_SUCH_CHILD,
@@ -27,18 +29,21 @@ public:
     };
 
 
-    // --- Node Types:
+    // ---- NODE TYPES ----
+    //
     enum class NodeType : std::uint8_t {
         IS_DIRECTORY,
         IS_FILE
     };
 
 
-    // --- For Debuging:
+    // ---- DEBUG METHOD  ----
+    //
     void print_tree ( size_t initial_indent = 0 ) const noexcept;
 
 
-    // --- Current Node Methods
+    // ---- METHODS FOR CURRENT NODE ----
+    //
     [[nodiscard]]
     Errors go_to_parent( void );
     Errors go_to_child ( const std::string& name );
@@ -49,7 +54,8 @@ public:
     bool has_parent( void ) const;
 
 
-    // --- Error Handling Methods:
+    // ---- ERROR HANDLING ----
+    //
     [[nodiscard]]
     bool has_errors( void ) const {
         return curr_error != Errors::NONE;
@@ -58,47 +64,48 @@ public:
 private:
 
     struct Node {
-        // --- Basic Properties:
+        // ---- BASIC PROPERTIES ----
         std::string name;
         NodeType    type;
-        Node *parent;
+        Node     *parent;
 
-        // --- Children Management:
+        // ---- CHILDREN MANAGEMENT ----
         std::unordered_map<
             std::string /* name of child */,
             std::unique_ptr<Node>> children {};
 
-        // --- Helper Methods:
+        // ---- HELPER METHODS ----
         [[nodiscard]]
         bool is_directory( void ) const {
             return type == NodeType::IS_DIRECTORY;
         }
 
-        // --- Constructor:
+        // ---- CONSTRUCTOR ----
         Node ( const std::string &_name,
                NodeType _type,
                Node *_parent = nullptr );
     };
 
 
-    // --- Root Node Of Tree:
+    // ---- ROOT OF TREE ----
     std::unique_ptr<Node> root;
 
-    // --- Current Node Of Tree:
+    // ---- CURRENT NODE ----
     Node* curr_node;
 
-    // --- Error Handling:
+    // ---- ERROR STATE ----
     Errors curr_error = Errors::NONE;
 
 
 public:
-    // --- Types:
+
+    // ---- TYPES ----
     using children_node_t = decltype ( Node::children );
 
-    // --- Get Methods:
-    const Node* get_root     ( void ) const;
-    const Node* get_curr_node( void ) const;
+    // ---- GET METHODS ----
+    const Node& get_root     ( void ) const;
+    const Node& get_curr_node( void ) const;
 
     // --- Actions:
-    Errors select_all_of( const Node* node );
+    Errors select_all_of( const Node& node );
 };

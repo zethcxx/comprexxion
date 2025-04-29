@@ -1,12 +1,17 @@
-// --- My Includes:
+// ---- LOCAL INCLUDES ----
+//
 #include "parsing/parser.hpp"
 #include "parsing/token.hpp"
 #include "parsing/tree.hpp"
 
-// --- External Includes:
+
+// ---- EXTERNAL INCLUDES ----
+//
 #include <fmt/core.h>
 
-// --- Standard Includes:
+
+// ---- STANDARD INCLUDES ----
+//
 #include <charconv>
 #include <cstdint>
 #include <string>
@@ -123,10 +128,12 @@ bool Parser::parsing() {
         advance();
 
 
-        if ( not is_token( NEWLINE ) and not is_token( END_OF_FILE )) {
-            return report_error("Expected newline but got '{}'", token.get_value());
+        if ( not is_token( NEWLINE ) and not is_token( END_OF_FILE ))
+          return report_error(
+                "Expected newline but got '{}'",
+                token.get_value()
+            );
 
-        }
 
         /* if is valid <identifier> : <value> \n */
         main_identifiers.at( identifier ).second = parsed_value.value();
@@ -136,22 +143,23 @@ bool Parser::parsing() {
 }
 
 
-std::optional<Parser::Identifier_value>
+std::optional<Parser::ident_value_t>
 Parser::validate_data_type( std::string_view identifier ) {
     using enum Token::Type;
 
 
-    Identifier_value raw_value = token.get_value();
-    std::string      value_str = token.get_value();
-    Token::Type      type      = main_identifiers.at(identifier).first;
+    ident_value_t raw_value = token.get_value();
+    std::string   value_str = token.get_value();
+    Token::Type   type      = main_identifiers.at(identifier).first;
 
 
     if ( type == PATHS_BLOCK and is_token( NEWLINE )) {
         skip_empty_lines();
 
         if ( not is_token( INDENT_SPACE ) and not is_token( INDENT_TAB )) {
-            report_error( "Expected spaces or tabs after newline, but got '{}'",
-                    token.get_value()
+            report_error(
+                "Expected spaces or tabs after newline, but got '{}'",
+                token.get_value()
             );
 
             return std::nullopt;
@@ -192,11 +200,12 @@ Parser::validate_data_type( std::string_view identifier ) {
         raw_value = valid_int32.value();
     }
 
+
     return raw_value;
 }
 
 
-bool Parser::parse_paths_block( Identifier_value &raw_value ) {
+bool Parser::parse_paths_block( ident_value_t &raw_value ) {
     using enum Token::Type;
     using NodeType = DirTree::NodeType;
 
@@ -206,14 +215,15 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
     const size_t block_indent_size = token.get_value().length();
     const auto   indent_type       = token.get_type();
 
-    /* Ensure at least one indent block */
+    /* Initialize to 1: root block is always indented once by design */
     std::size_t last_indent_level = 1;
 
     const std::string root_name = std::get<std::string>(
         main_identifiers.at( "project_root" ).second
     );
-    auto tree = std::make_shared<DirTree>( root_name );
 
+    auto  tree_ptr = std::make_shared<DirTree>( root_name );
+    auto &tree_ref = *tree_ptr;
 
     NodeType last_node_type = NodeType::IS_FILE;
     bool path_select_all = false;
@@ -237,8 +247,7 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
                 curr_indent_level = curr_indent_size / block_indent_size,
                 extra_indent      = curr_indent_size & (block_indent_size-1);
 
-        /* Store token before advancing, to use it in accurate error messages
-         */
+        /* Save for precise error reporting */
         const auto &previous_token = token;
 
         advance();
@@ -251,24 +260,21 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
 
 
         if ( curr_indent_level > last_indent_level+1 ) {
-            return report_error(
-                previous_token,
+            return report_error( previous_token,
                 "Expected {} blocks of indentation, but got {}",
                 last_indent_level+1,
                 curr_indent_level
             );
 
         } else if ( extra_indent > 0 ) {
-            return report_error(
-                previous_token,
+            return report_error( previous_token,
                 "Extra indentation of {} character(s).",
                 extra_indent
             );
 
         } else if ( last_node_type != NodeType::IS_DIRECTORY ) {
             if ( curr_indent_level > last_indent_level ) {
-                return report_error(
-                    previous_token,
+                return report_error( previous_token,
                     "Expected {} blocks of indentation, but got {}",
                     last_indent_level,
                     curr_indent_level
@@ -284,16 +290,18 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
             );
 
 
-        const char tye_indicator = token.get_value()[0];
+        const char type_indicator = token.get_value()[0];
+
 
         // TODO: add support for excluded paths
-        if ( tye_indicator == '-' ) {
+        if ( type_indicator == '-' ) {
             return report_error(
                 "Invalid path indicator: '{}'",
                 token.get_value()
             );
 
         }
+
 
         /* reject '+' if previous directory used '*' */
         if ( curr_indent_level > last_indent_level and path_select_all )
@@ -347,7 +355,7 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
         if ( is_token( SYMBOL ) and token.get_value() == "*" ) {
             if ( curr_node_type != NodeType::IS_DIRECTORY ) {
                 return report_error(
-                    "The '*' symbol can only be used in directories."
+                    "The '*' symbol is only valid for directories."
                 );
             }
 
@@ -371,23 +379,23 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
             size_t levels_up = last_indent_level - curr_indent_level;
 
             for ( size_t i = 0; i <= levels_up; i++ )
-                (void)tree->go_to_parent();
+                (void)tree_ref.go_to_parent();
         }
 
 
-        (void)tree->add_child(
+        (void)tree_ref.add_child(
             path,
             curr_node_type
         );
 
 
         if ( curr_node_type == NodeType::IS_DIRECTORY )
-            (void)tree->go_to_child( path );
+            (void)tree_ref.go_to_child( path );
 
 
         if ( path_select_all )
-            tree->select_all_of(
-                tree->get_curr_node()
+            tree_ref.select_all_of(
+                tree_ref.get_curr_node()
             );
 
 
@@ -395,7 +403,7 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
         last_node_type    = curr_node_type   ;
     }
 
-    raw_value = tree;
+    raw_value = tree_ptr;
     return true;
 }
 
@@ -421,7 +429,7 @@ void Parser::print_config() {
 }
 
 
-Parser::Parser ( Lexer &_lexer, Identifiers_map &_main_identifiers )
+Parser::Parser ( Lexer &_lexer, ident_map_t &_main_identifiers )
   : lexer            { _lexer            },
     main_identifiers { _main_identifiers }
 {

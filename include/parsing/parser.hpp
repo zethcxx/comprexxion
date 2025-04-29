@@ -1,14 +1,19 @@
 #pragma once
 
-// --- My Includes:
+// ---- LOCAL INCLUDES ----
+//
 #include "parsing/lexer.hpp"
 #include "parsing/token.hpp"
 #include "parsing/tree.hpp"
 
-// --- External Includes:
+
+// ---- EXTERNAL INCLUDES ----
+//
 #include <fmt/core.h>
 
-// --- Standard Includes:
+
+// ---- STANDARD INCLUDES ----
+//
 #include <memory>
 #include <string_view>
 #include <map>
@@ -19,75 +24,90 @@
 
 class Parser {
 public:
-    // --- Error Handling Methods:
+    // ---- ERROR HANDLING METHODS ----
+    //
     [[nodiscard]]
     bool has_errors( void ) const;
 
 
-    // --- Debugging Methods:
+    // ---- DEBUGGING METHODS -----
+    //
     void print_config( void );
 
 
-    // Types
-    using Identifier_value = std::variant <
+    // ---- MAIN TYPES ----
+    //
+    using ident_value_t = std::variant <
             std::string,
             std::int64_t,
             std::shared_ptr<DirTree>
         >;
     // +
-    using Identifiers_map  = std::map<
+    using ident_map_t  = std::map<
             std::string_view,
             std::pair<
                 Token::Type,
-                Identifier_value
+                ident_value_t
             >
         >;
 
-            // --- Constructor:
-    Parser ( Lexer &_lexer, Identifiers_map &_main_identifiers );
+
+    // ---- CONSTRUCTOR ----
+    //
+    Parser ( Lexer &_lexer, ident_map_t &_main_identifiers );
 
 
 private:
-    // --- Main members:
+    // ---- MAIN MEMBERS ----
+    //
     Lexer &lexer;
     Token  token;
 
-    // --- Error state:
+
+    // ---- ERROR STATE ----
+    //
     bool _has_errors = false;
 
 
-    // --- Main Identifiers:
-    Identifiers_map  &main_identifiers;
+    // ---- MAIN IDENTIFIERS ----
+    //
+    ident_map_t  &main_identifiers;
 
 
-    // --- Helpers Methods:
+    // --- HELPERS METHODS ----
+    //
     std::string get_lowercase( std::string_view str );
 
 
-    // --- Utility Methods:
+    // ---- UTILITY METHODS ----
+    //
     void advance         ( void );
     void backward        ( void );
     void skip_empty_lines( void );
     bool parsing         ( void );
 
 
-    // --- Token Checking:
+    // ---- TOKEN CHECKING ----
+    //
     bool is_token( const Token::Type &expected_token ) const;
 
 
-    // --- Parsing Methods:
-    bool parse_paths_block( Identifier_value &raw_value );
-
-
-    // --- Data Validation:
-    std::optional <std::int32_t>
-    parse_int32       ( std::string_view string     ) const;
+    // ---- PARSING METHODS ----
+    //
+    bool parse_paths_block(ident_value_t &raw_value);
     // +
-    std::optional <Identifier_value>
+    std::optional <std::int32_t>
+    parse_int32 ( std::string_view string ) const;
+
+
+    // ---- VALIDATION OF DATA ----
+    //
+    std::optional <ident_value_t>
     validate_data_type( std::string_view identifier );
 
 
-    // Reporting Methods:
+    // ---- REPORTING METHODS ----
+    //
     template <typename... Args>
     bool report_error( std::format_string <Args...> format_str,
                        Args&&... args
@@ -97,8 +117,8 @@ private:
 
         fmt::println( stderr, "File \"{}:{}:{}\"",
             fs::absolute( lexer.filepath ).string(),
-            token.get_line    (),
-            token.get_column  ()
+            token.get_line  (),
+            token.get_column()
         );
 
         const auto formatted = std::format(
@@ -109,7 +129,7 @@ private:
         fmt::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
         return false;
     }
-    // +
+    // + [ OVERLOAD FOR CUSTOM TOKEN ]
     template <typename... Args>
     bool report_error( const Token &temp_token,
                        std::format_string <Args...> format_str,

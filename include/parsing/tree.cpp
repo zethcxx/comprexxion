@@ -1,10 +1,15 @@
-// --- My Includes:
+// ---- LOCAL INCLUDES ----
+//
 #include "parsing/tree.hpp"
 
-// --- External Includes:
+
+// ---- EXTERNAL INCLUDES ----
+//
 #include <fmt/core.h>
 
-// --- Standard Includes:
+
+// ---- STANDARD INCLUDES ----
+//
 #include <memory>
 #include <vector>
 #include <utility>
@@ -62,18 +67,17 @@ DirTree::Errors DirTree::go_to_child( const std::string& name ) {
 }
 
 
-DirTree::Errors DirTree::select_all_of( const Node* node ) {
+DirTree::Errors DirTree::select_all_of( const Node& node ) {
     namespace fs = std::filesystem;
 
-    /* Early Return */
-    if ( not node->is_directory() )
+    if ( not node.is_directory() )
         return Errors::INVALID_TYPE;
 
-    if ( not fs::exists( node->name ))
+    if ( not fs::exists( node.name ))
         return Errors::INVALID_PATH;
 
 
-    const auto firstIterator = fs::directory_iterator( node->name );
+    const auto firstIterator = fs::directory_iterator( node.name );
 
     std::stack<fs::directory_iterator> stack {{
         firstIterator
@@ -103,7 +107,7 @@ DirTree::Errors DirTree::select_all_of( const Node* node ) {
         dirEntry++;
     }
 
-    go_to_child( node->name );
+    go_to_child( node.name );
 
     return Errors::NONE;
 }
@@ -115,21 +119,25 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
     using fmt::print, fmt::println;
 
     struct DirFrame {
-        children_node_t::iterator begin;
-        children_node_t::iterator end  ;
+        children_node_t::const_iterator begin;
+        children_node_t::const_iterator end  ;
         bool sep;
     };
 
     std::vector<DirFrame> stack;
 
-    stack.push_back({
-        .begin = root->children.begin(),
-        .end   = root->children.end  (),
-        .sep   = true,
-    });
+    stack.push_back(
+        DirFrame {
+            .begin = get_root().children.begin(),
+            .end   = get_root().children.end  (),
+            .sep   = true,
+        }
+    );
+
 
     print("{}", indent_str);
-    println("root(\x1b[34m{}\x1b[0m)", root->name);
+    println("root(\x1b[34m{}\x1b[0m)", get_root().name);
+
 
     while ( not stack.empty() ) {
         auto &[it, it_end, sep] = stack.back();
@@ -139,60 +147,63 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
             continue;
         }
 
-        const auto &name    = it -> first  ;
-        const auto &node    = it -> second ;
-        const auto &next_it = std::next(it);
+        const auto &name    =  ( it -> first );
+        const auto &node    = *( it -> second);
+        const auto &next_it = std::next ( it );
 
         print("{}", indent_str);
 
-        for ( size_t i = 0; i < stack.size()-1; i++ ) {
-            if ( stack.at( i ).sep )
+        for ( const auto &element : stack ) {
+            if ( element.sep )
                 print("\x1b[90m│  \x1b[0m");
             else
                 print("   ");
         }
 
+
         if ( next_it == it_end ) {
             sep = false;
             print("\x1b[90m└── \x1b[0m");
-        } else {
-            print("\x1b[90m├── \x1b[0m");
-        }
 
-        if ( node->is_directory() )
+        } else print("\x1b[90m├── \x1b[0m");
+
+
+        if ( node.is_directory() )
             println("\x1b[34m{}\x1b[0m", name);
         else
             println("{}", name);
 
         it++;
 
-        if ( not node->is_directory() and node->children.empty())
+        if ( not node.is_directory() and node.children.empty())
             continue;
 
-        stack.push_back({
-            .begin = node->children.begin(),
-            .end   = node->children.end  (),
-            .sep = true
-        });
+        stack.push_back(
+            DirFrame {
+                .begin = node.children.begin(),
+                .end   = node.children.end  (),
+                .sep   = true
+            }
+        );
+
     }
 }
 
 
-const DirTree::Node* DirTree::get_root( void ) const {
-    return root.get();
+const DirTree::Node& DirTree::get_root( void ) const {
+    return *root.get();
 }
 
 
-const DirTree::Node* DirTree::get_curr_node( void ) const {
-    return curr_node;
+const DirTree::Node& DirTree::get_curr_node( void ) const {
+    return *curr_node;
 }
 
 
-// --- Node Constructor:
 DirTree::Node::Node (
-    const std::string &_name,
-    NodeType _type,
-    Node *_parent
+    const std::string &_name ,
+    NodeType           _type ,
+    Node              *_parent
 )
   : name   { _name   },
     type   { _type   },
@@ -200,13 +211,12 @@ DirTree::Node::Node (
 {}
 
 
-// --- DirTree Default Constructor:
 DirTree::DirTree ()
   : root      { std::make_unique<Node>( "./", NodeType::IS_DIRECTORY ) },
     curr_node { root.get() }
 {}
 
-// --- DirTree Custom Constructor:
+
 DirTree::DirTree (const std::string &_root_name)
   : root      { std::make_unique<Node>( _root_name, NodeType::IS_DIRECTORY ) },
     curr_node { root.get() }

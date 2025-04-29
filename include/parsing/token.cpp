@@ -1,5 +1,25 @@
-// --- My Includes
+// ---- LOCAL INCLUDES ----
 #include "token.hpp"
+
+
+const std::string &Token::get_value() const {
+    return this->value;
+}
+
+
+std::size_t Token::get_line() const {
+    return this->line;
+}
+
+
+std::size_t Token::get_column () const {
+    return this->column;
+}
+
+
+Token::Type Token::get_type() const {
+    return this->type;
+}
 
 
 std::string_view Token::get_typestr( std::optional<Type> token_type ) const {

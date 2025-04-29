@@ -1,6 +1,6 @@
 #pragma once
 
-// --- Standard Includes:
+// ---- STANDARD INCLUDES ----
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -9,7 +9,9 @@
 
 class Token {
 public:
-    // --- Tokens Types
+
+    // ---- TYPES ----
+    //
     enum class Type : std::uint8_t {
         BEGIN_OF_FILE  ,
         IDENTIFIER     ,
@@ -29,37 +31,30 @@ public:
     };
 
 
-    // --- Get Methods
-    [[nodiscard]]
-    const std::string &get_value() const { return this->value; }
+    // ---- GETTERS ----
+    //
+    [[nodiscard]] const std::string& get_value () const;
+    [[nodiscard]] std::size_t        get_line  () const;
+    [[nodiscard]] std::size_t        get_column() const;
+    [[nodiscard]] Type               get_type  () const;
     // +
-    [[nodiscard]]
-    std::size_t get_line   () const { return this->line  ; }
-    // +
-    [[nodiscard]]
-    std::size_t get_column () const { return this->column; }
-    // +
-    [[nodiscard]]
-    Token::Type get_type   () const { return this->type  ; }
-    // +
-    [[nodiscard]]
     std::string_view get_typestr (
         std::optional<Type> token_type = std::nullopt
     ) const;
 
 
-    // --- Constructors
-    Token (
-        const Token::Type &_type  ,
-        const std::size_t &_line  ,
-        const std::size_t &_column,
-        const std::string &_value
-    );
+    // ---- CONSTRUCTORS ----
+    //
+    Token ( const Token::Type &_type  ,
+            const std::size_t &_line  ,
+            const std::size_t &_column,
+            const std::string &_value  );
     // +
     Token();
 
+
 private:
-    // --- Token Attributes
+
     Token::Type type  ;
     std::size_t line  ;
     std::size_t column;

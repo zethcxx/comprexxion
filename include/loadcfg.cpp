@@ -55,7 +55,7 @@ namespace {
     using TOKEN = Token::Type;
 
     // --- Main Identifiers:
-    Parser::Identifiers_map identifiers_on_top {
+    Parser::ident_map_t identifiers_on_top {
     /* "<identifier>" { <type>, <default_value> } */
         {
             "project_name"  , {
@@ -104,8 +104,8 @@ namespace {
         )->get_root();
 
         stack.push_back( DirFrame {
-            .begin = root_node->children.begin(),
-            .end   = root_node->children.end  ()
+            .begin = root_node.children.begin(),
+            .end   = root_node.children.end  ()
         });
 
         // TODO: implement recursive directory copy

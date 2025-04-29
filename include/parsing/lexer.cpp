@@ -1,15 +1,18 @@
-// --- My Includes:
+// ---- LOCAL INCLUDES ----
 #include "parsing/lexer.hpp"
 
-// --- External Includes:
+
+// ---- EXTERNAL INCLUDES ----
 #include <fmt/core.h>
 
-// --- Standard Includes:
-#include <cstring>
 
-Token Lexer::make_token(
-    const Token::Type  type,
-    const std::string &value
+bool Lexer::has_errors( void ) const {
+    return _has_errors;
+}
+
+
+Token Lexer::make_token( const Token::Type  type,
+                         const std::string &value
 ) {
     size_t char_pos = column - value.length();
 
@@ -71,22 +74,13 @@ void Lexer::advance() {
 }
 
 
-void Lexer::backward() {
-    if ( buffer_pos <= 0) return;
-
-    --buffer_pos;
-    --column    ;
-
-    curr_char = buffer.at( buffer_pos );
-}
-
-
 Token Lexer::get_next_token() {
     using TOKEN = Token::Type;
 
     while ( not eof_flag ) {
         if ( column == 1 && is_indent_char( curr_char ))
-            return parse_indent();
+            return tokenize_indent();
+
 
         if ( std::isspace( curr_char )) {
             if ( curr_char == '\n' ) {
@@ -101,27 +95,28 @@ Token Lexer::get_next_token() {
         }
 
 
-        if ( is_valid_char( curr_char ))
-            return parse_identifier();
+        if ( is_identifier_char( curr_char ))
+            return tokenize_identifier();
 
         else if ( is_digit( curr_char ))
-            return parse_number();
+            return tokenize_number();
 
         else if ( curr_char == '"' || curr_char == '\'' )
-            return parse_string();
+            return tokenize_string();
 
         else if ( curr_char == '#' )
-            parse_comment();
+            skip_comment();
 
         else
-            return parse_symbol();
+            return tokenize_symbol();
     }
+
 
     return make_token( TOKEN::END_OF_FILE, "EOF" );
 }
 
 
-Token Lexer::parse_number() {
+Token Lexer::tokenize_number() {
     using enum Token::Type;
     std::string value;
 
@@ -130,9 +125,9 @@ Token Lexer::parse_number() {
         advance();
     }
 
-    if ( is_valid_char( curr_char )) {
+    if ( is_identifier_char( curr_char )) {
         while (
-            is_valid_char( curr_char ) || is_digit( curr_char )
+            is_identifier_char( curr_char ) || is_digit( curr_char )
         ) {
             value += curr_char;
             advance();
@@ -147,7 +142,7 @@ Token Lexer::parse_number() {
 }
 
 
-Token Lexer::parse_string() {
+Token Lexer::tokenize_string() {
     using TOKEN = Token::Type;
 
     const char quote_type = curr_char;
@@ -181,7 +176,7 @@ Token Lexer::parse_string() {
 }
 
 
-Token Lexer::parse_symbol() {
+Token Lexer::tokenize_symbol() {
     using enum Token::Type;
     std::string symbol( 1, curr_char );
 
@@ -201,7 +196,7 @@ Token Lexer::parse_symbol() {
 }
 
 
-Token Lexer::parse_indent() {
+Token Lexer::tokenize_indent() {
     using enum Token::Type;
 
     std::string indent_value;
@@ -221,23 +216,23 @@ Token Lexer::parse_indent() {
         return make_token( INDENT_MIXED, indent_value );
 
     else if ( has_spaces )
-        return make_token( INDENT_SPACE , indent_value );
+        return make_token( INDENT_SPACE, indent_value );
 
     else
-        return make_token( INDENT_TAB   , indent_value );
+        return make_token( INDENT_TAB  , indent_value );
 }
 
 
-void Lexer::parse_comment() {
+void Lexer::skip_comment() {
     while ( curr_char != '\n' && not eof_flag )
         advance();
 }
 
 
-Token Lexer::parse_identifier() {
+Token Lexer::tokenize_identifier() {
     std::string identifier;
 
-    while (is_valid_char(curr_char)) {
+    while (is_identifier_char(curr_char)) {
         identifier += curr_char;
         advance();
 
@@ -248,7 +243,7 @@ Token Lexer::parse_identifier() {
 }
 
 
-bool Lexer::is_valid_char ( const char &c ) {
+bool Lexer::is_identifier_char ( const char &c ) {
     return std::isalpha( static_cast<unsigned char>( c )) || c == '_';
 }
 
