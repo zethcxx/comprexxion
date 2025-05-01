@@ -58,9 +58,13 @@ namespace {
     }
 
 
+    // ---- TYPEDEFS ----
+    //
     using TOKEN = Token::Type;
 
-    // --- Main Identifiers:
+
+    // ---- MAIN IDENTIFIERS ----
+    //
     Parser::ident_map_t identifiers_on_top {
     /* "<identifier>" { <type>, <default_value> } */
         {
@@ -71,7 +75,7 @@ namespace {
         },
         {
             "project_root"  , {
-                TOKEN::EXISTING_PATH,
+                TOKEN::PATH,
                 get_current_dir_path()
             }
         },
@@ -97,7 +101,30 @@ namespace {
     };
 
 
+    std::filesystem::path get_full_path_of( const DirTree& tree ) {
+        const auto &node = tree.get_curr_node();
+        auto *current_node = &node;
+
+        std::vector<std::string_view> path_parts;
+
+            while ( current_node->has_parent() ) {
+            path_parts.push_back( current_node->get_name() );
+            current_node = current_node->get_parent();
+        }
+
+        std::filesystem::path full_path;
+
+        for ( auto it = path_parts.rbegin(); it != path_parts.rend(); it++ ) {
+            full_path /= *it;
+        }
+
+        return full_path;
+    }
+
+
     void create_structure( void ) {
+        namespace fs = std::filesystem;
+
         struct DirFrame {
             DirTree::children_node_t::const_iterator begin;
             DirTree::children_node_t::const_iterator end  ;
@@ -105,18 +132,62 @@ namespace {
 
         std::vector<DirFrame> stack;
 
-        const auto &tree = std::get<std::shared_ptr<DirTree>>(
-            identifiers_on_top["structure"].second
+        const auto tree_ptr = std::get<std::shared_ptr<DirTree>>(
+                identifiers_on_top["structure"].second
+            );
+
+        const auto &tree = *tree_ptr;
+
+        const auto &root_node = tree.get_root();
+
+        const auto &project_name = std::get<std::string>(
+            identifiers_on_top["project_name"].second
         );
 
-        const auto &root_node = tree -> get_root();
+        fs::create_directory( project_name );
 
         stack.push_back( DirFrame {
             .begin = root_node.children.begin(),
             .end   = root_node.children.end  ()
         });
 
-        // TODO: implement recursive directory copy
+
+        while ( not stack.empty() ) {
+            auto &[it, it_end] = stack.back();
+
+            if ( it == it_end ) {
+                stack.pop_back();
+                continue;
+            }
+
+            const auto &node = *( it->second );
+
+            const fs::path source_path = get_full_path_of(tree);
+            const fs::path target_path = fs::path( project_name ) / source_path;
+
+            if ( not fs::exists( source_path ) ) {
+                fmt::println("File not found: {}", source_path.string());
+                ++it;
+                continue;
+            }
+
+
+            it++;
+
+            if ( node.is_directory() ) {
+                fs::create_directory( target_path );
+                fmt::println("created: {}", target_path.string());
+
+                stack.push_back( DirFrame {
+                    .begin = node.children.begin(),
+                    .end   = node.children.end  ()
+                });
+
+            } else {
+                fs::copy_file( source_path, target_path );
+                fmt::println("copied: {}", target_path.string());
+            }
+        }
     }
 }
 
@@ -131,6 +202,8 @@ bool cfg::loadcfg( int argc, char *argv[] ) {
 
     std::string filepath { "comprexxion.txt" };
 
+    // TODO: Add support for the -f (force) flag to remove the previous project if it exists
+
     /* Check if the filepath is specified */
     if ( args.size() == 3 and args[1] == "-c" ) {
         filepath = args[2];
@@ -143,6 +216,7 @@ bool cfg::loadcfg( int argc, char *argv[] ) {
 
     Lexer  lexer  { filepath };
     Parser parser { lexer, identifiers_on_top };
+
 
     if ( lexer.has_errors() || parser.has_errors() ) {
         return false;
