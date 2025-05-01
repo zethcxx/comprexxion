@@ -1,4 +1,5 @@
-// --- My Includes:
+// ---- LOCAL INCLUDES ----
+//
 #include "loadcfg.hpp"
 #include "parsing/lexer.hpp"
 #include "parsing/parser.hpp"
@@ -6,10 +7,13 @@
 #include "parsing/tree.hpp"
 
 
-// --- External Includes:
+// ---- EXTERNAL INCLUDES ----
+//
 #include <fmt/core.h>
 
-// --- Standard Includes:
+
+// ---- STANDARD INCLUDES ----
+//
 #include <span>
 #include <ranges>
 #include <string>
@@ -17,22 +21,24 @@
 #include <filesystem>
 #include <vector>
 
-/* Internal Linkage */
+
+// ---- INTERNAL LINKAGES ----
+//
 namespace {
 
-    // --- Usage Method:
     void usage( void ) {
         #ifdef _WIN32
-            std::string executable_name = "comprexxion.exe";
+            constexpr std::string_view executable_name = "comprexxion.exe";
         #else
-            std::string executable_name = "comprexxion";
+            constexpr std::string_view executable_name = "comprexxion";
         #endif
 
         fmt::println( "Usage: {} -c <config file>", executable_name );
     }
 
 
-    // --- Helper Methods:
+    // ---- HELPER FUNCTIONS ----
+    //
     std::string get_current_dir_name( void ) {
         namespace fs = std::filesystem;
 
@@ -59,13 +65,13 @@ namespace {
     /* "<identifier>" { <type>, <default_value> } */
         {
             "project_name"  , {
-                TOKEN::STRING,
+                TOKEN::BASENAME,
                 get_current_dir_name()
             }
         },
         {
             "project_root"  , {
-                TOKEN::STRING,
+                TOKEN::EXISTING_PATH,
                 get_current_dir_path()
             }
         },
@@ -85,7 +91,7 @@ namespace {
             "structure"       , {
                 TOKEN::PATHS_BLOCK,
                 /* By default, the entire current directory is included */
-                std::make_shared<DirTree>(DirTree{})
+                std::make_shared<DirTree>()
             }
         },
     };
@@ -99,9 +105,11 @@ namespace {
 
         std::vector<DirFrame> stack;
 
-        auto root_node = std::get<std::shared_ptr<DirTree>>(
+        const auto &tree = std::get<std::shared_ptr<DirTree>>(
             identifiers_on_top["structure"].second
-        )->get_root();
+        );
+
+        const auto &root_node = tree -> get_root();
 
         stack.push_back( DirFrame {
             .begin = root_node.children.begin(),

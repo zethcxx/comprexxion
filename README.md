@@ -63,6 +63,18 @@ structure:
       +f "main.cpp"
 ```
 
+Si se usa `-d "<path>"` no hace falta añadir el asterisco, ya que por defecto se excluirá la carpeta y todo su contenido.
+
+Por ende el siguiente ejemplo genera un error:
+
+```yaml
+structure:
+  -d "build/"
+      -f "file1" # ERROR
+      +f "file2" # ERROR
+```
+
+
 El primer bloque de identación ya sea con espacios o tabulaciones, se utilizara para determinar cada nivel de indentación.
 
 Hay un caso especial en lo siguiente:

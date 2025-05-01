@@ -1,10 +1,15 @@
-// --- My Includes:
+// ---- LOCAL INCLUDES ----
+//
 #include "utilities/utils.hpp"
 
-// --- External Includes:
+
+// ---- EXTERNAL INCLUDES ----
+//
 #include <fmt/core.h>
 
-// --- Standard Includes:
+
+// ---- STANDARD INCLUDES ----
+//
 #include <cstdint>
 #include <string>
 

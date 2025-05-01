@@ -81,9 +81,9 @@ private:
 
     // ---- UTILITY METHODS ----
     //
-    void advance         ( void );
     void backward        ( void );
     void skip_empty_lines( void );
+    bool advance         ( void );
     bool parsing         ( void );
 
 

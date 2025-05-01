@@ -1,6 +1,7 @@
 #pragma once
 
 // ---- STANDARD INCLUDES ----
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -52,6 +53,8 @@ public:
     // +
     [[nodiscard]]
     bool has_parent( void ) const;
+    // +
+    void ascend_levels( std::size_t levels );
 
 
     // ---- ERROR HANDLING ----
@@ -60,42 +63,62 @@ public:
     bool has_errors( void ) const {
         return curr_error != Errors::NONE;
     }
+    // +
+    [[nodiscard]]
+    Errors get_error( void ) const {
+        return curr_error;
+    }
+
 
 private:
 
     struct Node {
+
         // ---- BASIC PROPERTIES ----
+        //
         std::string name;
         NodeType    type;
         Node     *parent;
 
         // ---- CHILDREN MANAGEMENT ----
+        //
         std::unordered_map<
             std::string /* name of child */,
             std::unique_ptr<Node>> children {};
 
         // ---- HELPER METHODS ----
+        //
         [[nodiscard]]
-        bool is_directory( void ) const {
-            return type == NodeType::IS_DIRECTORY;
-        }
+        bool is_directory( void ) const;
 
         // ---- CONSTRUCTOR ----
+        //
         Node ( const std::string &_name,
                NodeType _type,
                Node *_parent = nullptr );
+
+        // ---- PROHIBITED COPY ----
+        //
+        Node( const Node& ) = delete;
+        Node& operator=( const Node& ) = delete;
     };
 
 
     // ---- ROOT OF TREE ----
+    //
     std::unique_ptr<Node> root;
 
     // ---- CURRENT NODE ----
+    //
     Node* curr_node;
 
     // ---- ERROR STATE ----
+    //
     Errors curr_error = Errors::NONE;
 
+    // ---- COMPLETE CURRENT NODE PATH ----
+    //
+    std::filesystem::path full_path;
 
 public:
 

@@ -46,12 +46,18 @@ DirTree::Errors DirTree::add_child(
 
 
 DirTree::Errors DirTree::go_to_parent() {
-    // --- if curr_node is root
+    /* if curr_node is root */
     if ( not has_parent() )
         return Errors::NO_SUCH_PARENT;
 
     curr_node = curr_node->parent;
     return Errors::NONE;
+}
+
+
+void DirTree::ascend_levels( size_t levels ) {
+    while ( levels --> 0 and has_parent() )
+        (void)go_to_parent();
 }
 
 
@@ -79,29 +85,35 @@ DirTree::Errors DirTree::select_all_of( const Node& node ) {
 
     const auto firstIterator = fs::directory_iterator( node.name );
 
+
     std::stack<fs::directory_iterator> stack {{
         firstIterator
     }};
 
+
     while ( not stack.empty() ) {
         auto &dirEntry = stack.top();
 
-        if ( dirEntry == fs::end( dirEntry )) {
+        if ( dirEntry == fs::directory_iterator{} ) {
             stack.pop();
             (void)go_to_parent();
             continue;
         }
+
 
         const auto path_name = dirEntry->path().filename().string();
         const auto type_path = dirEntry->is_directory()
             ? NodeType::IS_DIRECTORY
             : NodeType::IS_FILE;
 
-        add_child( path_name, type_path );
+
+        if ( add_child( path_name, type_path )  != Errors::NONE )
+            continue;
+
 
         if ( dirEntry->is_directory() ) {
-            stack.push( fs::directory_iterator( dirEntry->path() ) );
             go_to_child( path_name );
+            stack.push( fs::directory_iterator( dirEntry->path() ) );
         }
 
         dirEntry++;
@@ -153,8 +165,8 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
 
         print("{}", indent_str);
 
-        for ( const auto &element : stack ) {
-            if ( element.sep )
+        for ( size_t i = 0; i < stack.size()-1; i++ ) {
+            if ( stack.at( i ).sep )
                 print("\x1b[90m│  \x1b[0m");
             else
                 print("   ");
@@ -200,6 +212,11 @@ const DirTree::Node& DirTree::get_curr_node( void ) const {
 }
 
 
+bool DirTree::Node::is_directory( void ) const {
+    return type == NodeType::IS_DIRECTORY;
+}
+
+
 DirTree::Node::Node (
     const std::string &_name ,
     NodeType           _type ,
@@ -214,7 +231,13 @@ DirTree::Node::Node (
 DirTree::DirTree ()
   : root      { std::make_unique<Node>( "./", NodeType::IS_DIRECTORY ) },
     curr_node { root.get() }
-{}
+{
+    namespace fs = std::filesystem;
+
+    if ( not fs::exists( root->name ) ) {
+        curr_error = Errors::INVALID_PATH;
+    }
+}
 
 
 DirTree::DirTree (const std::string &_root_name)

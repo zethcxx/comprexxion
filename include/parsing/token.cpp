@@ -28,6 +28,8 @@ std::string_view Token::get_typestr( std::optional<Type> token_type ) const {
     switch ( token_type.value_or( this->type )) {
         case BEGIN_OF_FILE  : return "BEGIN_OF_FILE"  ;
         case IDENTIFIER     : return "IDENTIFIER"     ;
+        case BASENAME       : return "BASENAME"       ;
+        case EXISTING_PATH  : return "EXISTING_PATH"  ;
         case STRING         : return "STRING"         ;
         case UNCLOSED_STRING: return "UNCLOSED_STRING";
         case VALID_NUMBER   : return "VALID_NUMBER"   ;

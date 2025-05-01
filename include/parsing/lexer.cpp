@@ -19,6 +19,10 @@ Token Lexer::make_token( const Token::Type  type,
     if ( value == "\\n" )
         column = 1;
 
+    /* Adjust for the two quote characters not counted in the content */
+    if ( type == Token::Type::STRING )
+        char_pos -= 2;
+
     return { type, line, char_pos, value };
 }
 

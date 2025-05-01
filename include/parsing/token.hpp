@@ -16,6 +16,8 @@ public:
         BEGIN_OF_FILE  ,
         IDENTIFIER     ,
         STRING         ,
+        BASENAME       ,
+        EXISTING_PATH  ,
         UNCLOSED_STRING,
         VALID_NUMBER   ,
         INVALID_NUMBER ,
