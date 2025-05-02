@@ -1,6 +1,6 @@
 #include "lexer.hpp"
 #include <cstring>
-#include <print>
+#include <fmt/core.h>
 
 Token Lexer::make_token(
     const Token::Type  type,
@@ -117,7 +117,7 @@ Token Lexer::get_next_token() {
 
 
 Token Lexer::parse_number() {
-    using enum Token::Type;
+    using TOKEN = Token::Type;
     std::string value;
 
     while ( is_digit( curr_char )) {
@@ -135,10 +135,10 @@ Token Lexer::parse_number() {
             if ( eof_flag ) break;
         }
 
-        return make_token( INVALID_NUMBER, value );
+        return make_token( TOKEN::INVALID_NUMBER, value );
     }
 
-    return make_token( VALID_NUMBER, value );
+    return make_token( TOKEN::VALID_NUMBER, value );
 }
 
 
@@ -177,28 +177,28 @@ Token Lexer::parse_string() {
 
 
 Token Lexer::parse_symbol() {
-    using enum Token::Type;
+    using TOKEN = Token::Type;
     std::string symbol{ 1, curr_char };
 
     switch ( curr_char ) {
         case ':':
             advance();
-            return make_token( ASSIGN, symbol );
+            return make_token( TOKEN::ASSIGN, symbol );
 
         case '-':
         case '+':
             advance();
-            return make_token( PATH_INDICATOR, symbol );
+            return make_token( TOKEN::PATH_INDICATOR, symbol );
 
         default:
             advance();
-            return make_token( SYMBOL, symbol );
+            return make_token( TOKEN::SYMBOL, symbol );
     }
 }
 
 
 Token Lexer::parse_indent() {
-    using enum Token::Type;
+    using TOKEN = Token::Type;
 
     std::string indent_value;
 
@@ -214,13 +214,13 @@ Token Lexer::parse_indent() {
     }
 
     if ( has_spaces && has_tabs )
-        return make_token( INDENT_MIXED, indent_value );
+        return make_token( TOKEN::INDENT_MIXED, indent_value );
 
     else if ( has_spaces )
-        return make_token( INDENT_SPACE , indent_value );
+        return make_token( TOKEN::INDENT_SPACE , indent_value );
 
     else
-        return make_token( INDENT_TAB   , indent_value );
+        return make_token( TOKEN::INDENT_TAB   , indent_value );
 }
 
 
@@ -271,9 +271,9 @@ Lexer::Lexer ( const std::filesystem::path &_filepath )
 
     _has_errors = true;
 
-    std::println( stderr, "File \"{}\"",
+    fmt::println( stderr, "File \"{}\"",
             std::filesystem::absolute( _filepath ).string()
         );
 
-    std::println( stderr, "Error: {}", std::strerror( errno ));
+    fmt::println( stderr, "Error: {}", std::strerror( errno ));
 }

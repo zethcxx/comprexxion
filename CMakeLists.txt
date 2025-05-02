@@ -8,10 +8,20 @@ project ( COMPREXXION
 
 set(CMAKE_CXX_STANDARD_REQUIRED   ON)
 set(CMAKE_CXX_EXTENSIONS         OFF)
-set(CMAKE_CXX_STANDARD            23)
+set(CMAKE_CXX_STANDARD            17)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_NAME comprexxion)
+
+include(FetchContent)
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG        11.1.4
+)
+
+FetchContent_MakeAvailable(fmt)
+
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include/
@@ -88,4 +98,5 @@ target_link_options( ${EXECUTABLE_NAME}
 
 target_link_libraries( ${EXECUTABLE_NAME}
     PRIVATE
+        fmt::fmt
 )

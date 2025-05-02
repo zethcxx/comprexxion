@@ -1,24 +1,24 @@
 #include "token.hpp"
 
 std::string_view Token::get_typestr( std::optional<Type> token_type ) const {
-    using enum Type;
+    using TOKEN = Token::Type;
 
     switch ( token_type.value_or( this->type )) {
-        case BEGIN_OF_FILE  : return "BEGIN_OF_FILE"  ;
-        case IDENTIFIER     : return "IDENTIFIER"     ;
-        case STRING         : return "STRING"         ;
-        case UNCLOSED_STRING: return "UNCLOSED_STRING";
-        case VALID_NUMBER   : return "VALID_NUMBER"   ;
-        case INVALID_NUMBER : return "INVALID_NUMBER" ;
-        case NEWLINE        : return "NEWLINE"        ;
-        case ASSIGN         : return "ASSIGN"         ;
-        case SYMBOL         : return "SYMBOL"         ;
-        case PATH_INDICATOR : return "PATH_INDICATOR" ;
-        case PATHS_BLOCK    : return "PATHS_BLOCK"    ;
-        case INDENT_TAB     : return "INDENT_TAB"     ;
-        case INDENT_SPACE   : return "INDENT_SPACE"   ;
-        case INDENT_MIXED   : return "INDENT_MIXED"   ;
-        case END_OF_FILE    : return "END_OF_FILE"    ;
+        case TOKEN::BEGIN_OF_FILE  : return "BEGIN_OF_FILE"  ;
+        case TOKEN::IDENTIFIER     : return "IDENTIFIER"     ;
+        case TOKEN::STRING         : return "STRING"         ;
+        case TOKEN::UNCLOSED_STRING: return "UNCLOSED_STRING";
+        case TOKEN::VALID_NUMBER   : return "VALID_NUMBER"   ;
+        case TOKEN::INVALID_NUMBER : return "INVALID_NUMBER" ;
+        case TOKEN::NEWLINE        : return "NEWLINE"        ;
+        case TOKEN::ASSIGN         : return "ASSIGN"         ;
+        case TOKEN::SYMBOL         : return "SYMBOL"         ;
+        case TOKEN::PATH_INDICATOR : return "PATH_INDICATOR" ;
+        case TOKEN::PATHS_BLOCK    : return "PATHS_BLOCK"    ;
+        case TOKEN::INDENT_TAB     : return "INDENT_TAB"     ;
+        case TOKEN::INDENT_SPACE   : return "INDENT_SPACE"   ;
+        case TOKEN::INDENT_MIXED   : return "INDENT_MIXED"   ;
+        case TOKEN::END_OF_FILE    : return "END_OF_FILE"    ;
         default:
             return "Unknow";
     }

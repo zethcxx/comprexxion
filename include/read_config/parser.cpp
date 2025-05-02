@@ -47,7 +47,7 @@ std::string Parser::type_str_lowercase( const TOKEN &type ) {
     auto type_str = std::string( token.get_typestr( type ));
 
     /* convert type_str to lowercase */
-    std::ranges::transform( type_str, type_str.begin(),
+    std::transform( type_str.begin(), type_str.end(), type_str.begin(),
         []( unsigned char c ){
             if ( c == '_' ) return int(' ');
             return std::tolower(c);
@@ -64,28 +64,27 @@ void Parser::skip_empty_lines() {
 
 
 void Parser::parsing() {
-    using enum Token::Type;
-
     std::unordered_set<std::string> identifiers_used;
 
     auto is_duplicate = [&]( const std::string &identifier ) -> bool {
-        if ( identifiers_used.contains( identifier ) ) return true;
+        if ( identifiers_used.find( identifier ) != identifiers_used.end() )
+            return true;
 
         identifiers_used.insert( identifier );
         return false;
     };
 
-    if ( is_token( BEGIN_OF_FILE )) advance();
+    if ( is_token( TOKEN::BEGIN_OF_FILE )) advance();
 
-    while ( not is_token( END_OF_FILE )) {
+    while ( not is_token( TOKEN::END_OF_FILE )) {
 
         skip_empty_lines();
 
         /* Stop if the file only had empty lines */
-        if ( is_token( END_OF_FILE )) break;
+        if ( is_token( TOKEN::END_OF_FILE )) break;
 
 
-        if ( not is_token( IDENTIFIER )) {
+        if ( not is_token( TOKEN::IDENTIFIER )) {
             report(
                 "Identifier expected, but got '{}'",
                 token.get_value()
@@ -97,7 +96,7 @@ void Parser::parsing() {
         const std::string identifier = token.get_value();
 
 
-        if ( not identifiers_on_top.contains( identifier) ) {
+        if ( identifiers_on_top.find( identifier) == identifiers_on_top.end() ) {
             report( "Identifier Unknow '{}'", identifier);
             break;
         }
@@ -110,7 +109,7 @@ void Parser::parsing() {
         } else advance();
 
 
-        if ( not is_token( ASSIGN )) {
+        if ( not is_token( TOKEN::ASSIGN )) {
             report("Expected ':' after identifier.");
             break;
 
@@ -123,7 +122,7 @@ void Parser::parsing() {
         else advance();
 
 
-        if ( not is_token( NEWLINE ) and not is_token( END_OF_FILE )) {
+        if ( not is_token( TOKEN::NEWLINE ) and not is_token( TOKEN::END_OF_FILE )) {
             report("Expected newline but got '{}'", token.get_value());
             break;
         }
@@ -136,18 +135,15 @@ void Parser::parsing() {
 
 std::optional<Parser::Identifier_value>
 Parser::validate_data_type( const std::string &identifier ) {
-    using enum TOKEN;
-
 
     Identifier_value raw_value   = token.get_value();
     std::string      value_str   = token.get_value();
     Token::Type      type        = identifiers_on_top.at(identifier).first;
 
-
-    if ( type == PATHS_BLOCK and is_token( NEWLINE )) {
+    if ( type == TOKEN::PATHS_BLOCK and is_token( TOKEN::NEWLINE )) {
         skip_empty_lines();
 
-        if ( not is_token( INDENT_SPACE ) and not is_token( INDENT_TAB )) {
+        if ( not is_token( TOKEN::INDENT_SPACE ) and not is_token( TOKEN::INDENT_TAB )) {
             report( "Expected spaces or tabs after newline, but got '{}'",
                     token.get_value()
             );
@@ -171,7 +167,7 @@ Parser::validate_data_type( const std::string &identifier ) {
 
     }
 
-    if ( is_token( STRING ) and token.get_value().empty() ) {
+    if ( is_token( TOKEN::STRING ) and token.get_value().empty() ) {
         report( "The value for '{}' cannot be an empty string.",
                 identifier
         );
@@ -179,8 +175,7 @@ Parser::validate_data_type( const std::string &identifier ) {
         return std::nullopt;
     }
 
-
-    if ( is_token( VALID_NUMBER ) ) {
+    if ( is_token( TOKEN::VALID_NUMBER ) ) {
         auto valid_int32 = parse_int32( value_str );
 
         if ( not valid_int32 ) {
@@ -196,8 +191,6 @@ Parser::validate_data_type( const std::string &identifier ) {
 
 
 bool Parser::parse_paths_block( Identifier_value &raw_value ) {
-    using enum TOKEN;
-
     const size_t block_indent_size = token.get_value().length();
     const auto   indent_type       = token.get_type();
 
@@ -209,9 +202,9 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
     auto tree = std::make_shared<DirTree>( root_name );
 
     bool last_was_directory = false;
-    while ( not is_token( END_OF_FILE )) {
+    while ( not is_token( TOKEN::END_OF_FILE )) {
 
-        if ( is_token ( INDENT_MIXED )) {
+        if ( is_token ( TOKEN::INDENT_MIXED )) {
             report( "Mixed spaces and tabs" );
             return false;
         }
@@ -235,7 +228,7 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
         const auto current_token = token;
 
         /* ignore empty lines */
-        if ( is_token( NEWLINE )) {
+        if ( is_token( TOKEN::NEWLINE )) {
             skip_empty_lines();
             continue;
         };
@@ -271,7 +264,7 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
         token = current_token;
 
 
-        if ( not is_token( PATH_INDICATOR )) {
+        if ( not is_token( TOKEN::PATH_INDICATOR )) {
             report(
                 "Expected path indicator (+/-), but got '{}'",
                 token.get_value()
@@ -294,7 +287,7 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
         advance();
 
 
-        if ( not is_token( IDENTIFIER )) {
+        if ( not is_token( TOKEN::IDENTIFIER )) {
             report(
                 "Expected identifier (f/d), but got '{}'",
                 token.get_value()
@@ -308,7 +301,7 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
         advance();
 
 
-        if ( not is_token( STRING )) {
+        if ( not is_token( TOKEN::STRING )) {
             report(
                 "Expected string, but got '{}'",
                 token.get_value()
@@ -324,7 +317,7 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
         advance();
 
 
-        if ( not is_token( NEWLINE )) {
+        if ( not is_token( TOKEN::NEWLINE )) {
             report(
                 "Expected newline after path, but got '{}'",
                 token.get_value()
@@ -356,18 +349,21 @@ bool Parser::parse_paths_block( Identifier_value &raw_value ) {
 
 
 void Parser::print_config() {
-    for ( const auto &[identifier, values] : identifiers_on_top ) {
+    for ( const auto &pair : identifiers_on_top ) {
+        const auto &identifier = pair.first;
+        const auto &values     = pair.second;
+
         std::visit( [&]( const auto& value ) {
             using T = std::decay_t< decltype( value )>;
 
             if constexpr (std::is_same_v<T, std::string>) {
-                std::println("{:<14}: {}", identifier, value);
+                fmt::println("{:<14}: {}", identifier, value);
 
             } else if constexpr (std::is_same_v<T, int64_t>) {
-                std::println("{:<14}: {}", identifier, value);
+                fmt::println("{:<14}: {}", identifier, value);
 
             } else if constexpr (std::is_same_v<T, std::shared_ptr<DirTree>>) {
-                std::println("{}:", identifier);
+                fmt::println("{}:", identifier);
                 value->print_tree(11);
             }
 

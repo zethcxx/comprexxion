@@ -1,6 +1,6 @@
 #include "tree.hpp"
 #include <memory>
-#include <print>
+#include <fmt/core.h>
 #include <vector>
 #include <utility>
 
@@ -14,7 +14,7 @@ bool DirTree::add_child( const std::string &name,
 ) {
     const auto &children = curr_node->children;
 
-    if ( not curr_node->is_directory or children.contains(name) )
+    if ( not curr_node->is_directory or children.find(name) != children.end() )
         return false;
 
     curr_node->children.insert({
@@ -50,7 +50,7 @@ bool DirTree::go_to_child( const std::string& name ) {
 void DirTree::print_tree( size_t initial_indent ) {
     static std::string indent_str = std::string(initial_indent, ' ');
 
-    using std::print, std::println;
+    using fmt::print, fmt::println;
 
     struct DirFrame {
         decltype ( Node::children )::iterator begin;
@@ -61,9 +61,9 @@ void DirTree::print_tree( size_t initial_indent ) {
     std::vector<DirFrame> stack;
 
     stack.push_back({
-        .begin = root->children.begin(),
-        .end   = root->children.end  (),
-        .separator = true,
+        /* .begin     */ root->children.begin(),
+        /* .end       */ root->children.end  (),
+        /* .separator */ true,
     });
 
     print("{}", indent_str);
@@ -108,9 +108,9 @@ void DirTree::print_tree( size_t initial_indent ) {
             continue;
 
         stack.push_back({
-            .begin = node->children.begin(),
-            .end   = node->children.end  (),
-            .separator = true
+            /* .begin     */ node->children.begin(),
+            /* .end       */ node->children.end  (),
+            /* .separator */ true
         });
     }
 }

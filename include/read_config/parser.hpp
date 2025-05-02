@@ -9,7 +9,9 @@
 #include <map>
 #include <utility>
 #include <variant>
-#include <print>
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/os.h>
 
 
 class Parser {
@@ -103,24 +105,24 @@ public:
     // +
     template<typename... Args>
     void report(
-        std::format_string<Args...> format_str,
+        const std::string& format_str,
         Args&&... args
     ) {
         namespace fs = std::filesystem;
         _has_errors = true;
 
-        std::println( stderr, "File \"{}:{}:{}\"",
+        fmt::println( stderr, "File \"{}:{}:{}\"",
             fs::absolute( lexer.filepath ).string(),
             token.get_line    (),
             token.get_column  ()
         );
 
-        const auto formatted = std::format(
+        const auto formatted = fmt::format(
             format_str,
             std::forward<Args>(args)...
         );
 
-        std::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
+        fmt::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
     }
 
 

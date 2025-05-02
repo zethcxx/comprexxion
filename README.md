@@ -1,8 +1,6 @@
 # COMPREXXION
-Un programa que copia una estructura de directorios y archivos definido en `comprexxion.txt` o cualquier otro archivo indicado con `-c <config.txt>` para luego comprimirlo en un archivo.
+Un programa que copia una estructura de directorios y archivos definido en `comprexxion.txt` o cualquier otro archivo indicado con `-c <config.txt>` para luego comprimir todo en un archivo.
 
-# Por qué?
-No lo sé. Simplemente estoy aburrido y esta es una de las maneras que tengo para distraerme.
 
 # Compilación
 
@@ -14,5 +12,5 @@ $ cmake --build build
 # Ejecución
 
 ```sh
-$ ./bin/comprexxion -c <config.txt>
+$ ./bin/comprexxion
 ```
