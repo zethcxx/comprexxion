@@ -69,13 +69,14 @@ target_compile_options( ${EXECUTABLE_NAME}
             -fno-gnu-keywords
             -fno-optimize-sibling-calls
             -fdiagnostics-show-option
-            -fno-asynchronous-unwind-tables
             -fdiagnostics-color=always
         >
 
         $<$<CONFIG:Release>:
             -Os
+            -O2
             -g0
+            -DNDEBUG
             -Wl,--icf=sage,-strip-all,--gc-sections
             -fomit-frame-pointer
             -march=native
@@ -84,7 +85,7 @@ target_compile_options( ${EXECUTABLE_NAME}
             -ffunction-sections
             -fvisibility=hidden
             -fvisibility-inlines-hidden
-            -fno-asynchronous-unwind-tables
+            
         >
 )
 

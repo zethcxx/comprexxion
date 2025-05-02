@@ -4,3 +4,5 @@ bin/
 build/
 notes/
 scripts/
+*.exe
+*.elf
