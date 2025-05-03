@@ -17,7 +17,7 @@ public:
         IDENTIFIER     ,
         STRING         ,
         BASENAME       ,
-        EXISTING_PATH  ,
+        PATH  ,
         UNCLOSED_STRING,
         VALID_NUMBER   ,
         INVALID_NUMBER ,

@@ -85,6 +85,8 @@ private:
     void skip_empty_lines( void );
     bool advance         ( void );
     bool parsing         ( void );
+    // +
+    std::string normalize_path( std::string_view path );
 
 
     // ---- TOKEN CHECKING ----
@@ -104,46 +106,67 @@ private:
     //
     std::optional <ident_value_t>
     validate_data_type( std::string_view identifier );
+    // +
+    bool validate_basename( std::string_view string ) const;
 
 
     // ---- REPORTING METHODS ----
     //
     template <typename... Args>
     bool report_error( std::format_string <Args...> format_str,
-                       Args&&... args
-    ) {
-        namespace fs = std::filesystem;
-        _has_errors = true;
-
-        fmt::println( stderr, "File \"{}:{}:{}\"",
-            fs::absolute( lexer.filepath ).string(),
-            token.get_line  (),
-            token.get_column()
-        );
-
-        const auto formatted = std::format(
-            format_str,
-            std::forward<Args>(args)...
-        );
-
-        fmt::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
-        return false;
-    }
+                       Args&&... args );
+    //
     // + [ OVERLOAD FOR CUSTOM TOKEN ]
+    //
     template <typename... Args>
     bool report_error( const Token &temp_token,
                        std::format_string <Args...> format_str,
-                       Args&&... args
-    ) {
-        const auto &last_token = this->token;
-
-        /* swap token for reporting */
-        token = temp_token;
-
-        report_error<Args...>( format_str, std::forward<Args>(args)... );
-
-        /* Restore the original token */
-        token = last_token;
-        return false;
-    }
+                       Args&&... args );
 };
+
+
+/* ------------------------------------------------------------------------- */
+
+
+// ---- TEMPLATE IMPLEMENTATIONS ----
+//
+template <typename... Args>
+bool Parser::report_error( std::format_string <Args...> format_str,
+                           Args&&... args
+) {
+    namespace fs = std::filesystem;
+    _has_errors = true;
+
+    fmt::println( stderr, "File \"{}:{}:{}\"",
+        fs::absolute( lexer.filepath ).string(),
+        token.get_line  (),
+        token.get_column()
+    );
+
+    const auto formatted = std::format(
+        format_str,
+        std::forward<Args>(args)...
+    );
+
+    fmt::println( stderr, "\x1b[1;31mError\x1b[0m: {}", formatted );
+    return false;
+}
+//
+// +
+//
+template <typename... Args>
+bool Parser::report_error( const Token &temp_token,
+                           std::format_string <Args...> format_str,
+                           Args&&... args
+) {
+    const auto last_token = token;
+
+    /* swap token for reporting */
+    token = temp_token;
+
+    report_error<Args...>( format_str, std::forward<Args>(args)... );
+
+    /* Restore the original token */
+    token = last_token;
+    return false;
+}

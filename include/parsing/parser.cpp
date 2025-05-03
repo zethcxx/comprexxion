@@ -169,7 +169,11 @@ Parser::validate_data_type( std::string_view identifier ) {
         }
 
 
-        if ( type_expect == BASENAME or type_expect == EXISTING_PATH ) {
+        if ( type_expect == BASENAME ) {
+
+        }
+
+        if ( type_expect == PATH ) {
             // TODO: Check if the string is a valid path
         }
 
@@ -198,6 +202,12 @@ Parser::validate_data_type( std::string_view identifier ) {
     );
 
     return {};
+}
+
+
+std::string Parser::normalize_path( std::string_view path ) {
+    // TODO: Remove extra trailing slashes "/"
+    return std::string(path);
 }
 
 
@@ -387,11 +397,11 @@ bool Parser::parse_paths_block( ident_value_t &raw_value ) {
             tree.ascend_levels(last_indent_level - curr_indent_level + 1);
 
 
-        const auto &path_name = path_token.get_value();
-        const auto &curr_node = tree.get_curr_node  ();
+        const auto  path_name = normalize_path(path_token.get_value());
+        const auto &curr_node = tree.get_curr_node();
 
 
-        if ( curr_node.children.contains( path_name ) )
+        if ( curr_node.get_children().contains( path_name ) )
             return report_error( path_token,
                 "Path '{}' duplicate.",
                 path_name

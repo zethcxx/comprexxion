@@ -101,27 +101,6 @@ namespace {
     };
 
 
-    std::filesystem::path get_full_path_of( const DirTree& tree ) {
-        const auto &node = tree.get_curr_node();
-        auto *current_node = &node;
-
-        std::vector<std::string_view> path_parts;
-
-            while ( current_node->has_parent() ) {
-            path_parts.push_back( current_node->get_name() );
-            current_node = current_node->get_parent();
-        }
-
-        std::filesystem::path full_path;
-
-        for ( auto it = path_parts.rbegin(); it != path_parts.rend(); it++ ) {
-            full_path /= *it;
-        }
-
-        return full_path;
-    }
-
-
     void create_structure( void ) {
         namespace fs = std::filesystem;
 
@@ -136,19 +115,20 @@ namespace {
                 identifiers_on_top["structure"].second
             );
 
-        const auto &tree = *tree_ptr;
 
-        const auto &root_node = tree.get_root();
-
+        const auto &tree         = *tree_ptr;
+        const auto &root_node    = tree.get_root();
         const auto &project_name = std::get<std::string>(
             identifiers_on_top["project_name"].second
         );
 
+
         fs::create_directory( project_name );
 
+
         stack.push_back( DirFrame {
-            .begin = root_node.children.begin(),
-            .end   = root_node.children.end  ()
+            .begin = root_node.get_children().begin(),
+            .end   = root_node.get_children().end  ()
         });
 
 
@@ -162,7 +142,7 @@ namespace {
 
             const auto &node = *( it->second );
 
-            const fs::path source_path = get_full_path_of(tree);
+            const fs::path source_path = node.get_full_path();
             const fs::path target_path = fs::path( project_name ) / source_path;
 
             if ( not fs::exists( source_path ) ) {
@@ -179,8 +159,8 @@ namespace {
                 fmt::println("created: {}", target_path.string());
 
                 stack.push_back( DirFrame {
-                    .begin = node.children.begin(),
-                    .end   = node.children.end  ()
+                    .begin = node.get_children().begin(),
+                    .end   = node.get_children().end  ()
                 });
 
             } else {

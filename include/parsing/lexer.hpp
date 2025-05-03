@@ -59,9 +59,10 @@ private:
     std::size_t line   = 1;
     std::size_t column = 0;
     // +
-    Token curr_token;
-    char  curr_char ;
-    bool  eof_flag  ;
+    Token curr_token {};
+    // +
+    char  curr_char { '\0'  };
+    bool  eof_flag  { false };
 
 
     // ---- BUFFER STATE ----

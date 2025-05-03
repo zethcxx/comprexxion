@@ -12,63 +12,44 @@
 //
 #include <memory>
 #include <vector>
-#include <utility>
 #include <filesystem>
 #include <stack>
 
 
-bool DirTree::has_parent() const {
-    return curr_node->parent != nullptr;
-}
-
+/* ----------------------- DIRTREE:: IMPLEMENTATION ----------------------- */
 
 DirTree::Errors DirTree::add_child(
     const std::string &name,
     NodeType type
 ) {
-    const auto &parent   = curr_node;
-    const auto &children = curr_node->children;
-
-    if ( not parent->is_directory() )
-        return Errors::INVALID_TYPE;
-
-    else if ( children.contains(name) )
-        return Errors::ALREADY_EXISTS;
-
-
-    parent->children.insert({
-        name,
-        std::make_unique<Node>( name, type, parent )
-    });
-
-    return Errors::NONE;
+    return (*curr_node).add_child( name, type );
 }
 
 
 DirTree::Errors DirTree::go_to_parent() {
     /* if curr_node is root */
-    if ( not has_parent() )
+    if ( not (*curr_node).has_parent() )
         return Errors::NO_SUCH_PARENT;
 
-    curr_node = curr_node->parent;
+    curr_node = (*curr_node).get_parent();
     return Errors::NONE;
 }
 
 
 void DirTree::ascend_levels( size_t levels ) {
-    while ( levels --> 0 and has_parent() )
+    while ( levels --> 0 and (*curr_node).has_parent() )
         (void)go_to_parent();
 }
 
 
 DirTree::Errors DirTree::go_to_child( const std::string& name ) {
-    const auto &node = curr_node->children.find(name);
+    const auto &node = (*curr_node).get_children().find(name);
 
-    if ( node == curr_node->children.end() )
+    if ( node == (*curr_node).get_children().end() )
         return Errors::NO_SUCH_CHILD;
 
 
-    curr_node = node->second.get();
+    curr_node = (*node).second.get();
     return Errors::NONE;
 }
 
@@ -79,11 +60,11 @@ DirTree::Errors DirTree::select_all_of( const Node& node ) {
     if ( not node.is_directory() )
         return Errors::INVALID_TYPE;
 
-    if ( not fs::exists( node.name ))
+    if ( not fs::exists( node.get_name() ))
         return Errors::INVALID_PATH;
 
 
-    const auto firstIterator = fs::directory_iterator( node.name );
+    const auto firstIterator = fs::directory_iterator( node.get_name() );
 
 
     std::stack<fs::directory_iterator> stack {{
@@ -119,7 +100,7 @@ DirTree::Errors DirTree::select_all_of( const Node& node ) {
         dirEntry++;
     }
 
-    go_to_child( node.name );
+    go_to_child( node.get_name() );
 
     return Errors::NONE;
 }
@@ -140,15 +121,15 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
 
     stack.push_back(
         DirFrame {
-            .begin = get_root().children.begin(),
-            .end   = get_root().children.end  (),
+            .begin = get_root().get_children().begin(),
+            .end   = get_root().get_children().end  (),
             .sep   = true,
         }
     );
 
 
     print("{}", indent_str);
-    println("root(\x1b[34m{}\x1b[0m)", get_root().name);
+    println("root(\x1b[34m{}\x1b[0m)", get_root().get_name());
 
 
     while ( not stack.empty() ) {
@@ -187,18 +168,63 @@ void DirTree::print_tree( size_t initial_indent ) const noexcept {
 
         it++;
 
-        if ( not node.is_directory() and node.children.empty())
+        if ( not node.is_directory() and node.get_children().empty())
             continue;
 
         stack.push_back(
             DirFrame {
-                .begin = node.children.begin(),
-                .end   = node.children.end  (),
+                .begin = node.get_children().begin(),
+                .end   = node.get_children().end  (),
                 .sep   = true
             }
         );
 
     }
+}
+
+
+std::filesystem::path DirTree::get_full_path_of( const Node& node ) {
+    std::vector<std::string_view> path_parts;
+    const Node *current_node = &node;
+
+    while ( (*current_node).has_parent() ) {
+        path_parts.push_back( (*current_node).get_name() );
+        current_node = (*current_node).get_parent();
+    }
+
+    std::filesystem::path full_path;
+
+    for ( auto it = path_parts.rbegin(); it != path_parts.rend(); it++ ) {
+        full_path /= *it;
+    }
+
+    return full_path;
+}
+
+
+DirTree::DirTree ()
+  : root      { std::make_unique<Node>( "./", NodeType::IS_DIRECTORY ) },
+    curr_node { root.get() }
+{
+    namespace fs = std::filesystem;
+
+    if ( not fs::exists( (*root).get_name() ) ) {
+        curr_error = Errors::INVALID_PATH;
+    }
+}
+
+
+DirTree::DirTree (const std::string &_root_name)
+  : root      { std::make_unique<Node>( _root_name, NodeType::IS_DIRECTORY ) },
+    curr_node { root.get() }
+{}
+
+
+/* -------------------- DIRTREE::NODE:: IMPLEMENTATION -------------------- */
+
+
+bool DirTree::Node::is_directory( void ) const {
+    return type == NodeType::IS_DIRECTORY;
 }
 
 
@@ -212,8 +238,54 @@ const DirTree::Node& DirTree::get_curr_node( void ) const {
 }
 
 
-bool DirTree::Node::is_directory( void ) const {
-    return type == NodeType::IS_DIRECTORY;
+std::string   DirTree::Node::get_full_path( void ) const {
+    return get_full_path_of( *this );
+}
+
+
+bool DirTree::Node::has_parent( void ) const {
+    return this->parent != nullptr;
+}
+
+
+const std::string &DirTree::Node::get_name( void ) const {
+    return name;
+}
+
+
+const DirTree::children_node_t &DirTree::Node::get_children( void ) const {
+    return children;
+}
+
+
+DirTree::Node *DirTree::Node::get_parent( void ) const {
+    return parent;
+}
+
+
+DirTree::Errors DirTree::Node::add_child (
+    const std::string &_name,
+    NodeType _type
+) {
+    auto &current_node = *this;
+
+    if ( not current_node.is_directory() )
+        return Errors::EXPECTED_DIRECTORY;
+
+    else if ( current_node.children.contains(name) )
+        return Errors::ALREADY_EXISTS;
+
+
+    current_node.children.insert( {
+        _name,
+        std::make_unique<Node>(
+            _name,
+            _type,
+            &current_node
+        )
+    });
+
+    return Errors::NONE;
 }
 
 
@@ -225,22 +297,4 @@ DirTree::Node::Node (
   : name   { _name   },
     type   { _type   },
     parent { _parent }
-{}
-
-
-DirTree::DirTree ()
-  : root      { std::make_unique<Node>( "./", NodeType::IS_DIRECTORY ) },
-    curr_node { root.get() }
-{
-    namespace fs = std::filesystem;
-
-    if ( not fs::exists( root->name ) ) {
-        curr_error = Errors::INVALID_PATH;
-    }
-}
-
-
-DirTree::DirTree (const std::string &_root_name)
-  : root      { std::make_unique<Node>( _root_name, NodeType::IS_DIRECTORY ) },
-    curr_node { root.get() }
 {}
